@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from .services import handle_file_upload
 from .insert_service import process_and_insert_data  # DB 삽입 로직이 있는 모듈
 from .analysis_services import process_all_analysis
@@ -28,8 +28,8 @@ def upload_files():
 @main_bp.route('/insert', methods=['POST'])
 def insert_data():
     try:
-        # 병합된 파일 경로
-        merged_file_path = '../merged/merged_data.xlsx'
+        # 병합된 파일 경로를 절대 경로로 설정
+        merged_file_path = os.path.join(current_app.root_path, 'merged', 'merged_data.xlsx')
 
         # DB 삽입 로직 호출
         success, message = process_and_insert_data(merged_file_path, 'c##finalProject/1234@localhost:1521/xe')
