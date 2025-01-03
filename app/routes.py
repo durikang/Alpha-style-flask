@@ -7,6 +7,7 @@ import os  # os 모듈 가져오기
 # 블루프린트 생성
 main_bp = Blueprint('main', __name__)
 
+
 @main_bp.route('/upload', methods=['POST'])
 def upload_files():
     try:
@@ -24,6 +25,7 @@ def upload_files():
     except Exception as e:
         print("Error in /upload:", str(e))  # 예외 디버깅
         return jsonify({'error': str(e)}), 500
+
 
 @main_bp.route('/insert', methods=['POST'])
 def insert_data():
@@ -46,6 +48,7 @@ def insert_data():
         print("Error in /insert:", str(e))
         return jsonify({'error': str(e)}), 500
 
+
 @main_bp.route('/analysis', methods=['POST'])
 def create_graph():
     try:
@@ -57,6 +60,7 @@ def create_graph():
     except Exception as e:
         print("Error in /analysis:", str(e))
         return jsonify({'error': str(e)}), 500
+
 
 @main_bp.route('/profit_view', methods=['POST'])
 def profit_view():
@@ -71,6 +75,7 @@ def profit_view():
     except Exception as e:
         print("Error in /profit_view:", str(e))
         return f"Error: {str(e)}", 500
+
 
 @main_bp.route('/graph', methods=['POST'])
 def graph_view():
@@ -133,4 +138,3 @@ def graph_view():
     except Exception as e:
         print(f"[EXCEPTION] Exception occurred: {str(e)}")
         return jsonify({'error': str(e)}), 500
-

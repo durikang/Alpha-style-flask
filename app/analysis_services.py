@@ -2,17 +2,14 @@ import os
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-<<<<<<< HEAD
+
 import json
 import folium
 import cx_Oracle
-=======
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
 
 
 def process_all_analysis():
     try:
-<<<<<<< HEAD
 
         # 1. 오라클 데이터베이스 연결 설정
         dsn = cx_Oracle.makedsn("your_host", 1521, service_name="your_service_name")
@@ -37,18 +34,13 @@ def process_all_analysis():
         # 3. 데이터 처리
         oracle_data.replace(['-'], np.nan, inplace=True)
 
-
-=======
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
         # 경로 설정
         input_file = './merged/merged_data.xlsx'
         user_file = './유저/가데이터.xlsx'
         output_dir = "./analysis"
         output_dir_html = "./analysis_html"
-<<<<<<< HEAD
+
         geo_file_path = './유저/SIG.geojson'
-=======
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
 
         os.makedirs(output_dir, exist_ok=True)
         os.makedirs(output_dir_html, exist_ok=True)
@@ -58,7 +50,7 @@ def process_all_analysis():
         user_data = pd.read_excel(user_file)
         merged_data.replace(['-'], np.nan, inplace=True)
 
-        # ==================== 연도별 매출/판관비/순이익 ====================
+        # ====== 연도별 매출/판관비/순이익 ======
         sales_data = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1].copy()
         sales_data['년도'] = sales_data['년도'].astype(str).str.extract(r'(\d{4})')[0]
         sales_data['년도'] = pd.to_numeric(sales_data['년도'], errors='coerce')
@@ -70,7 +62,7 @@ def process_all_analysis():
         cost_data = merged_data[
             (merged_data['매입매출구분(1-매출/2-매입)'] == 2) |
             (merged_data['판매비와 관리비'].notna())
-        ].copy()
+            ].copy()
         cost_data['년도'] = cost_data['년도'].astype(str).str.extract(r'(\d{4})')[0]
         cost_data['년도'] = pd.to_numeric(cost_data['년도'], errors='coerce')
         cost_data['판매비와 관리비'] = pd.to_numeric(cost_data['판매비와 관리비'], errors='coerce')
@@ -179,7 +171,7 @@ def process_all_analysis():
         fig.write_html(html_file)
         print(f"매출/판관비/순이익 그래프 저장 완료: {html_file}")
 
-        # ==================== 연도별 성별 매출 비중 ====================
+        # ====== 연도별 성별 매출 비중 ======
         sales_administrative = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1]
         merged_gender = pd.merge(sales_administrative, user_data, on='유저번호')
         merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
@@ -189,7 +181,6 @@ def process_all_analysis():
 
         # 병합된 데이터 저장
         year_gender_spending.to_excel(output_file_path, index=False)
-
 
         years = sorted(year_gender_spending['년도'].unique())
         male_data = year_gender_spending[year_gender_spending['성별'] == '남자'].set_index('년도')['공급가액']
@@ -260,13 +251,9 @@ def process_all_analysis():
         print(f"병합된 데이터가 성공적으로 저장되었습니다: {output_file_path}")
         print(f"그래프 파일이 성공적으로 저장되었습니다: {html_file}")
 
-<<<<<<< HEAD
-#### 여기부터
+        #### 여기부터
 
-
-=======
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
-        # ==================== 연도별 품목별 공급가액 ====================
+        # ====== 연도별 품목별 공급가액 ======
         for year in sorted(net_profit['년도'].dropna().unique()):
             # 해당 연도의 데이터 필터링
             year_data = sales_data[sales_data['년도'] == year]
@@ -283,7 +270,6 @@ def process_all_analysis():
                 .sort_values(ascending=False)
                 .reset_index()
             )
-
 
             # 엑셀 파일 저장 경로
             output_file_path = os.path.join(output_dir, f"{year}_상품별_판매량.xlsx")
@@ -319,7 +305,7 @@ def process_all_analysis():
 
             print(f"{year}년 데이터가 저장되었습니다: {output_file_path}")
             print(f"{year}년 그래프가 저장되었습니다: {html_file}")
-        # ==================== 품명별 공급가액 ====================
+        # ====== 품명별 공급가액 ======
         # 기존 매출 데이터 `sales_data` 재활용
         sales_price = (
             sales_data.groupby('품명')['공급가액']
@@ -328,7 +314,6 @@ def process_all_analysis():
             .sort_values(ascending=False)
             .reset_index()
         )
-
 
         # 엑셀 파일로 저장
         sales_excel_path = os.path.join(output_dir, "상품별_판매량.xlsx")
@@ -359,15 +344,13 @@ def process_all_analysis():
         )
 
         # HTML 파일로 저장
-<<<<<<< HEAD
+
         sales_html_path = os.path.join(output_dir_html, "연도별_상품별_판매량.html")
         fig.write_html(sales_html_path)
-
 
         print(f"품명별 공급가액 엑셀 파일이 저장되었습니다: {sales_excel_path}")
         print(f"품명별 공급가액 그래프 HTML 파일이 저장되었습니다: {sales_html_path}")
 
-=======
         sales_html_path = os.path.join(output_dir_html, "상품별_판매량.html")
         fig.write_html(sales_html_path)
 
@@ -379,17 +362,12 @@ def process_all_analysis():
         merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
         years = merged_gender['년도'].dropna().unique()
 
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
         for year in sorted(years):
             # 해당 연도의 데이터 필터링
             year_data = merged_gender[merged_gender['년도'] == year]
             year_dir = os.path.join(output_dir_html, str(year))
             os.makedirs(year_dir, exist_ok=True)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
             # 그룹화 후 '공급가액'에 대한 합계 계산
             sales_user_quantity = (
                 year_data.groupby('유저번호')['공급가액']
@@ -401,19 +379,13 @@ def process_all_analysis():
             # 공급가액 기준 정렬 및 누적 금액 계산
             sales_user_value_sorted = sales_user_quantity.sort_values('공급가액', ascending=False)
             sales_user_value_sorted['누적금액'] = sales_user_value_sorted['공급가액'].cumsum()
-<<<<<<< HEAD
-=======
+
             sales_user_value_sorted = sales_user_value_sorted['누적금액']
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
 
             # 엑셀 파일 저장 경로
             output_file_path = os.path.join(output_dir, f"{year}_VIP_유저.xlsx")
             sales_user_value_sorted.to_excel(output_file_path, index=False)
 
-<<<<<<< HEAD
-=======
-
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
             # Y축의 최대값 계산 (억 단위로 변환)
             max_value = sales_user_value_sorted['누적금액'].max() / 1e8
 
@@ -440,7 +412,7 @@ def process_all_analysis():
             cutoff_indices = [int(np.ceil(len(sales_user_value_sorted) * p)) for p in percentages]
 
             for cutoff_index, percent in zip(cutoff_indices, percentages):
-<<<<<<< HEAD
+
                 if cutoff_index > 0:
                     fig.add_trace(
                         go.Scatter(
@@ -452,7 +424,7 @@ def process_all_analysis():
                             name=f'{int(percent * 100)}% 경계'
                         )
                     )
-=======
+
                 fig.add_trace(
                     go.Scatter(
                         x=[cutoff_index / len(sales_user_value_sorted), cutoff_index / len(sales_user_value_sorted)],
@@ -462,7 +434,6 @@ def process_all_analysis():
                         name=f'{int(percent * 100)}% 경계'
                     )
                 )
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
 
             # 그래프 레이아웃 설정
             fig.update_layout(
@@ -487,7 +458,7 @@ def process_all_analysis():
 
             print(f"{year}년 누적 금액 영역 그래프가 성공적으로 저장되었습니다: {html_file_path}")
 
-        # ==================== 누적 금액 영역 그래프 (전체 유저 기준) ====================
+        # ====== 누적 금액 영역 그래프 (전체 유저 기준) ======
 
         # 그룹화 후 '공급가액'에 대한 합계 계산
         sales_user_quantity = (
@@ -559,14 +530,9 @@ def process_all_analysis():
         html_file_path = os.path.join(output_dir_html, "전체_판매량_VIP.html")
         fig.write_html(html_file_path)
 
-<<<<<<< HEAD
-
         print(f"누적 금액 영역 그래프가 성공적으로 저장되었습니다: {html_file_path}")
 
-
-#### 여기부터
-
-
+        #### 여기부터
 
         # GeoJSON 데이터 로드
         geo_file_path = './유저/SIG.geojson'
@@ -645,13 +611,10 @@ def process_all_analysis():
         html_file_path = os.path.join(output_dir_html, "연도별_지역별_판매량.html")
         combined_map.save(html_file_path)
         print(f"'{html_file_path}'에 저장 완료")
-=======
+
         print(f"누적 금액 영역 그래프가 성공적으로 저장되었습니다: {html_file_path}")
 
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
         return True, "모든 분석 작업이 완료되었습니다."
 
     except Exception as e:
         return False, str(e)
-
-
