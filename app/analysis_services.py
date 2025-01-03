@@ -2,11 +2,10 @@ import os
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-
 import json
 import folium
 import cx_Oracle
-
+from datetime import datetime
 
 def process_all_analysis():
     try:
@@ -16,7 +15,7 @@ def process_all_analysis():
         connection = cx_Oracle.connect(user="c##finalProject", password="1234", dsn=dsn)
 
         # 2. 오라클 데이터 쿼리 실행 및 읽기
-        oracle_query = "SELECT BIRTH_DATE, USER_NO, ADDRESS, GENDER, FROM MEMBERS"  # 여기에 실제 쿼리를 작성하세요
+        oracle_query = "SELECT BIRTH_DATE, USER_NO, ADDRESS, GENDER FROM MEMBERS"  # 여기에 실제 쿼리를 작성하세요
         cursor = connection.cursor()
         cursor.execute(oracle_query)
 
@@ -33,6 +32,16 @@ def process_all_analysis():
 
         # 3. 데이터 처리
         oracle_data.replace(['-'], np.nan, inplace=True)
+        oracle_data.columns = ["나이", "유저번호", "주소", "성별"]
+
+
+        # 현재 연도 가져오기
+        current_year = datetime.now().year
+
+        # "나이" 컬럼을 문자열로 변환 후 연도 추출
+        oracle_data['나이'] = oracle_data['나이'].astype(str).str[:4].astype(int)
+        oracle_data['나이'] = current_year - oracle_data['나이']  # 현재 연도에서 빼기
+        print(oracle_data.head())
 
         # 경로 설정
         input_file = './merged/merged_data.xlsx'
@@ -360,6 +369,7 @@ def process_all_analysis():
         merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
         years = merged_gender['년도'].dropna().unique()
 
+        print(merged_gender.columns)
         for year in sorted(years):
             # 해당 연도의 데이터 필터링
             year_data = merged_gender[merged_gender['년도'] == year]
@@ -533,7 +543,6 @@ def process_all_analysis():
         #### 여기부터
 
         # GeoJSON 데이터 로드
-        geo_file_path = './유저/SIG.geojson'
         with open(geo_file_path, encoding='UTF-8') as f:
             geo = json.load(f)
 
