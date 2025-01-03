@@ -12,11 +12,11 @@ def process_all_analysis():
     try:
 
         # 1. 오라클 데이터베이스 연결 설정
-        dsn = cx_Oracle.makedsn("your_host", 1521, service_name="your_service_name")
+        dsn = cx_Oracle.makedsn("localhost", 1521, service_name="xe")
         connection = cx_Oracle.connect(user="c##finalProject", password="1234", dsn=dsn)
 
         # 2. 오라클 데이터 쿼리 실행 및 읽기
-        oracle_query = "SELECT * FROM YOUR_TABLE"  # 여기에 실제 쿼리를 작성하세요
+        oracle_query = "SELECT BIRTH_DATE, USER_NO, ADDRESS, GENDER, FROM MEMBERS"  # 여기에 실제 쿼리를 작성하세요
         cursor = connection.cursor()
         cursor.execute(oracle_query)
 
@@ -36,7 +36,6 @@ def process_all_analysis():
 
         # 경로 설정
         input_file = './merged/merged_data.xlsx'
-        user_file = './유저/가데이터.xlsx'
         output_dir = "./analysis"
         output_dir_html = "./analysis_html"
 
@@ -47,7 +46,6 @@ def process_all_analysis():
 
         # 엑셀 파일 읽기
         merged_data = pd.read_excel(input_file)
-        user_data = pd.read_excel(user_file)
         merged_data.replace(['-'], np.nan, inplace=True)
 
         # ====== 연도별 매출/판관비/순이익 ======
@@ -173,7 +171,7 @@ def process_all_analysis():
 
         # ====== 연도별 성별 매출 비중 ======
         sales_administrative = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1]
-        merged_gender = pd.merge(sales_administrative, user_data, on='유저번호')
+        merged_gender = pd.merge(sales_administrative, oracle_data, on='유저번호')
         merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
         year_gender_spending = merged_gender.groupby(['년도', '성별'])['공급가액'].sum().reset_index()
 
@@ -358,7 +356,7 @@ def process_all_analysis():
         print(f"품명별 공급가액 그래프 HTML 파일이 저장되었습니다: {sales_html_path}")
 
         # 유저 데이터와 매출 데이터 병합
-        merged_gender = pd.merge(sales_data, user_data, on='유저번호')
+        merged_gender = pd.merge(sales_data, oracle_data, on='유저번호')
         merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
         years = merged_gender['년도'].dropna().unique()
 
