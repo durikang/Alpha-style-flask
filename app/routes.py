@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-from flask import Blueprint, request, jsonify
-=======
 from flask import Blueprint, request, jsonify, current_app
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
 from .services import handle_file_upload
 from .insert_service import process_and_insert_data  # DB 삽입 로직이 있는 모듈
 from .analysis_services import process_all_analysis
@@ -32,13 +28,10 @@ def upload_files():
 @main_bp.route('/insert', methods=['POST'])
 def insert_data():
     try:
-<<<<<<< HEAD
         # 병합된 파일 경로
         merged_file_path = '../merged/merged_data.xlsx'
-=======
         # 병합된 파일 경로를 절대 경로로 설정
         merged_file_path = os.path.join(current_app.root_path, 'merged', 'merged_data.xlsx')
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
 
         # DB 삽입 로직 호출
         success, message = process_and_insert_data(merged_file_path, 'c##finalProject/1234@localhost:1521/xe')
@@ -96,25 +89,20 @@ def graph_view():
             file_paths = [
                 './analysis_html/연도별_재무상태표.html',
                 './analysis_html/연도별_상품별_판매량.html',
-<<<<<<< HEAD
                 './analysis_html/연도별_성별_매출.html',
                 './analysis_html/전체_판매량_VIP.html',
                 './analysis_html/연도별_지역별_판매량.html'
-=======
                 './analysis_html/연도별_성별_매출.html'
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
             ]
         else:
             file_paths = [
                 f'./analysis_html/{year}/{year}_재무상태표.html',
                 f'./analysis_html/{year}/{year}_상품별_판매량.html',
-<<<<<<< HEAD
                 f'./analysis_html/{year}/{year}_성별_매출.html',
                 f'./analysis_html/{year}/{year}_VIP_유저.html',
                 f'./analysis_html/{year}/{year}_지역별_판매량.html'
-=======
                 f'./analysis_html/{year}/{year}_성별_매출.html'
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
+
             ]
 
         print(f"[DEBUG] File paths: {file_paths}")
@@ -134,13 +122,12 @@ def graph_view():
                 results.append({'path': path, 'content': f"File not found: {path}"})
 
         print(f"[DEBUG] Returning results count: {len(results)}")
-<<<<<<< HEAD
+
         # HTML 파일 직접 확인
         with open('./analysis_html/연도별_지역별_판매량.html', 'r', encoding='utf-8') as file:
             content = file.read()
         print(content)
-=======
->>>>>>> d52eeef3bb816eefddddf9cdfcd02d076b7e4a41
+
         return jsonify(results), 200
 
     except Exception as e:
