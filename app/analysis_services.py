@@ -369,7 +369,6 @@ def process_all_analysis():
         merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
         years = merged_gender['년도'].dropna().unique()
 
-        print(merged_gender.columns)
         for year in sorted(years):
             # 해당 연도의 데이터 필터링
             year_data = merged_gender[merged_gender['년도'] == year]
@@ -388,11 +387,11 @@ def process_all_analysis():
             sales_user_value_sorted = sales_user_quantity.sort_values('공급가액', ascending=False)
             sales_user_value_sorted['누적금액'] = sales_user_value_sorted['공급가액'].cumsum()
 
-            sales_user_value_sorted = sales_user_value_sorted['누적금액']
+            sales_user_value_sorted_xlxs = sales_user_value_sorted['누적금액']
 
             # 엑셀 파일 저장 경로
             output_file_path = os.path.join(output_dir, f"{year}_VIP_유저.xlsx")
-            sales_user_value_sorted.to_excel(output_file_path, index=False)
+            sales_user_value_sorted_xlxs.to_excel(output_file_path, index=False)
 
             # Y축의 최대값 계산 (억 단위로 변환)
             max_value = sales_user_value_sorted['누적금액'].max() / 1e8
