@@ -87,13 +87,17 @@ def graph_view():
             file_paths = [
                 './analysis_html/연도별_재무상태표.html',
                 './analysis_html/연도별_상품별_판매량.html',
-                './analysis_html/연도별_성별_매출.html'
+                './analysis_html/연도별_성별_매출.html',
+                './analysis_html/전체_판매량_VIP.html',
+                './analysis_html/연도별_지역별_판매량.html'
             ]
         else:
             file_paths = [
                 f'./analysis_html/{year}/{year}_재무상태표.html',
                 f'./analysis_html/{year}/{year}_상품별_판매량.html',
-                f'./analysis_html/{year}/{year}_성별_매출.html'
+                f'./analysis_html/{year}/{year}_성별_매출.html',
+                f'./analysis_html/{year}/{year}_VIP_유저.html',
+                f'./analysis_html/{year}/{year}_지역별_판매량.html'
             ]
 
         print(f"[DEBUG] File paths: {file_paths}")
@@ -113,6 +117,10 @@ def graph_view():
                 results.append({'path': path, 'content': f"File not found: {path}"})
 
         print(f"[DEBUG] Returning results count: {len(results)}")
+        # HTML 파일 직접 확인
+        with open('./analysis_html/연도별_지역별_판매량.html', 'r', encoding='utf-8') as file:
+            content = file.read()
+        print(content)
         return jsonify(results), 200
 
     except Exception as e:

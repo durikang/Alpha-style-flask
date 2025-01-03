@@ -2,15 +2,44 @@ import os
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import json
+import folium
+import cx_Oracle
 
 
 def process_all_analysis():
     try:
+
+        # 1. 오라클 데이터베이스 연결 설정
+        dsn = cx_Oracle.makedsn("your_host", 1521, service_name="your_service_name")
+        connection = cx_Oracle.connect(user="c##finalProject", password="1234", dsn=dsn)
+
+        # 2. 오라클 데이터 쿼리 실행 및 읽기
+        oracle_query = "SELECT * FROM YOUR_TABLE"  # 여기에 실제 쿼리를 작성하세요
+        cursor = connection.cursor()
+        cursor.execute(oracle_query)
+
+        # 오라클 데이터 -> Pandas DataFrame으로 변환
+        columns = [col[0] for col in cursor.description]  # 컬럼 이름 가져오기
+        data = cursor.fetchall()
+        oracle_data = pd.DataFrame(data, columns=columns)
+
+        # 오라클 연결 닫기
+        cursor.close()
+        connection.close()
+
+        print("오라클 데이터 읽기 완료")
+
+        # 3. 데이터 처리
+        oracle_data.replace(['-'], np.nan, inplace=True)
+
+
         # 경로 설정
         input_file = './merged/merged_data.xlsx'
         user_file = './유저/가데이터.xlsx'
         output_dir = "./analysis"
         output_dir_html = "./analysis_html"
+        geo_file_path = './유저/SIG.geojson'
 
         os.makedirs(output_dir, exist_ok=True)
         os.makedirs(output_dir_html, exist_ok=True)
@@ -222,6 +251,9 @@ def process_all_analysis():
         print(f"병합된 데이터가 성공적으로 저장되었습니다: {output_file_path}")
         print(f"그래프 파일이 성공적으로 저장되었습니다: {html_file}")
 
+#### 여기부터
+
+
         # ==================== 연도별 품목별 공급가액 ====================
         for year in sorted(net_profit['년도'].dropna().unique()):
             # 해당 연도의 데이터 필터링
@@ -315,22 +347,19 @@ def process_all_analysis():
         )
 
         # HTML 파일로 저장
-        sales_html_path = os.path.join(output_dir_html, "상품별_판매량.html")
+        sales_html_path = os.path.join(output_dir_html, "연도별_상품별_판매량.html")
         fig.write_html(sales_html_path)
+
 
         print(f"품명별 공급가액 엑셀 파일이 저장되었습니다: {sales_excel_path}")
         print(f"품명별 공급가액 그래프 HTML 파일이 저장되었습니다: {sales_html_path}")
-
-        # 유저 데이터와 매출 데이터 병합
-        merged_gender = pd.merge(sales_data, user_data, on='유저번호')
-        merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
-        years = merged_gender['년도'].dropna().unique()
 
         for year in sorted(years):
             # 해당 연도의 데이터 필터링
             year_data = merged_gender[merged_gender['년도'] == year]
             year_dir = os.path.join(output_dir_html, str(year))
             os.makedirs(year_dir, exist_ok=True)
+
 
             # 그룹화 후 '공급가액'에 대한 합계 계산
             sales_user_quantity = (
@@ -343,12 +372,10 @@ def process_all_analysis():
             # 공급가액 기준 정렬 및 누적 금액 계산
             sales_user_value_sorted = sales_user_quantity.sort_values('공급가액', ascending=False)
             sales_user_value_sorted['누적금액'] = sales_user_value_sorted['공급가액'].cumsum()
-            sales_user_value_sorted = sales_user_value_sorted['누적금액']
 
             # 엑셀 파일 저장 경로
             output_file_path = os.path.join(output_dir, f"{year}_VIP_유저.xlsx")
             sales_user_value_sorted.to_excel(output_file_path, index=False)
-
 
             # Y축의 최대값 계산 (억 단위로 변환)
             max_value = sales_user_value_sorted['누적금액'].max() / 1e8
@@ -376,15 +403,17 @@ def process_all_analysis():
             cutoff_indices = [int(np.ceil(len(sales_user_value_sorted) * p)) for p in percentages]
 
             for cutoff_index, percent in zip(cutoff_indices, percentages):
-                fig.add_trace(
-                    go.Scatter(
-                        x=[cutoff_index / len(sales_user_value_sorted), cutoff_index / len(sales_user_value_sorted)],
-                        y=[0, sales_user_value_sorted['누적금액'].iloc[cutoff_index - 1] / 1e8],
-                        mode='lines',
-                        line=dict(color='red', dash='dash'),
-                        name=f'{int(percent * 100)}% 경계'
+                if cutoff_index > 0:
+                    fig.add_trace(
+                        go.Scatter(
+                            x=[cutoff_index / len(sales_user_value_sorted),
+                               cutoff_index / len(sales_user_value_sorted)],
+                            y=[0, sales_user_value_sorted['누적금액'].iloc[cutoff_index - 1] / 1e8],
+                            mode='lines',
+                            line=dict(color='red', dash='dash'),
+                            name=f'{int(percent * 100)}% 경계'
+                        )
                     )
-                )
 
             # 그래프 레이아웃 설정
             fig.update_layout(
@@ -481,8 +510,91 @@ def process_all_analysis():
         html_file_path = os.path.join(output_dir_html, "전체_판매량_VIP.html")
         fig.write_html(html_file_path)
 
+
         print(f"누적 금액 영역 그래프가 성공적으로 저장되었습니다: {html_file_path}")
 
+
+#### 여기부터
+
+
+
+        # GeoJSON 데이터 로드
+        geo_file_path = './유저/SIG.geojson'
+        with open(geo_file_path, encoding='UTF-8') as f:
+            geo = json.load(f)
+
+        # 지역코드와 위도, 경도 정보 추출
+        region_coordinates = {}
+        for feature in geo['features']:
+            sig_cd = feature['properties']['SIG_CD']
+            coords = feature['geometry']['coordinates']
+            if feature['geometry']['type'] == 'MultiPolygon':
+                lon, lat = coords[0][0][0][0], coords[0][0][0][1]
+            elif feature['geometry']['type'] == 'Polygon':
+                lon, lat = coords[0][0][0], coords[0][0][1]
+            region_coordinates[sig_cd] = (lat, lon)
+
+        # Excel 데이터 로드
+        excel_file_path = './유저/유저 머지.xlsx'
+        merged_user_data = pd.read_excel(excel_file_path)
+
+        # 데이터 준비
+        merged_user_area = merged_user_data[['지역코드', '년도', '공급가액']]
+        user_supply_sum = merged_user_area.groupby(['지역코드', '년도'])['공급가액'].sum().reset_index()
+
+        # 연도별 버블 차트 생성
+        for year in sorted(user_supply_sum['년도'].unique()):
+            # 해당 연도의 데이터 필터링
+            year_data = user_supply_sum[user_supply_sum['년도'] == year]
+
+            # 연도별 디렉토리 생성
+            year_dir = os.path.join(output_dir_html, str(year))
+            os.makedirs(year_dir, exist_ok=True)
+            map_center = [35.96, 127.1]
+            map_year = folium.Map(location=map_center, zoom_start=8, tiles='cartodbpositron')
+
+            for _, row in year_data.iterrows():
+                region_code = str(row['지역코드'])
+                supply_value = row['공급가액']
+                if region_code in region_coordinates:
+                    lat, lon = region_coordinates[region_code]
+                    bubble_size = supply_value / 5e5
+                    folium.CircleMarker(
+                        location=[lat, lon],
+                        radius=bubble_size,
+                        fill=True,
+                        fill_color='skyblue',
+                        fill_opacity=0.6,
+                        stroke=False,
+                        popup=f'지역 코드: {region_code}<br>공급가액: {supply_value:,.0f}원'
+                    ).add_to(map_year)
+
+            html_file_path = os.path.join(year_dir, f'{year}_지역별_판매량.html')
+            map_year.save(html_file_path)
+            print(f"'{html_file_path}'에 저장 완료")
+        # 전체 데이터를 기반으로 한 버블 차트 생성
+        user_supply_sum_total = merged_user_area.groupby(['지역코드'])['공급가액'].sum().reset_index()
+
+        combined_map = folium.Map(location=[35.96, 127.1], zoom_start=8, tiles='cartodbpositron')
+        for _, row in user_supply_sum_total.iterrows():
+            region_code = str(row['지역코드'])
+            supply_value = row['공급가액']
+            if region_code in region_coordinates:
+                lat, lon = region_coordinates[region_code]
+                bubble_size = supply_value / 5e6
+                folium.CircleMarker(
+                    location=[lat, lon],
+                    radius=bubble_size,
+                    fill=True,
+                    fill_color='skyblue',
+                    fill_opacity=0.6,
+                    stroke=False,
+                    popup=f'지역 코드: {region_code}<br>공급가액: {supply_value:,.0f}원'
+                ).add_to(combined_map)
+
+        html_file_path = os.path.join(output_dir_html, "연도별_지역별_판매량.html")
+        combined_map.save(html_file_path)
+        print(f"'{html_file_path}'에 저장 완료")
         return True, "모든 분석 작업이 완료되었습니다."
 
     except Exception as e:
