@@ -97,7 +97,6 @@ def graph_view():
                 './analysis_html/연도별_성별_매출.html',
                 './analysis_html/전체_판매량_VIP.html',
                 './analysis_html/연도별_지역별_판매량.html'
-                './analysis_html/연도별_성별_매출.html'
             ]
         else:
             file_paths = [
@@ -106,7 +105,6 @@ def graph_view():
                 f'./analysis_html/{year}/{year}_성별_매출.html',
                 f'./analysis_html/{year}/{year}_VIP_유저.html',
                 f'./analysis_html/{year}/{year}_지역별_판매량.html'
-                f'./analysis_html/{year}/{year}_성별_매출.html'
 
             ]
 
