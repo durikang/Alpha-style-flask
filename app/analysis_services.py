@@ -7,6 +7,7 @@ import folium
 import cx_Oracle
 from datetime import datetime
 
+
 def process_all_analysis():
     try:
 
@@ -34,14 +35,12 @@ def process_all_analysis():
         oracle_data.replace(['-'], np.nan, inplace=True)
         oracle_data.columns = ["나이", "유저번호", "주소", "성별"]
 
-
         # 현재 연도 가져오기
         current_year = datetime.now().year
 
         # "나이" 컬럼을 문자열로 변환 후 연도 추출
         oracle_data['나이'] = oracle_data['나이'].astype(str).str[:4].astype(int)
         oracle_data['나이'] = current_year - oracle_data['나이']  # 현재 연도에서 빼기
-        print(oracle_data.head())
 
         # 경로 설정
         input_file = './merged/merged_data.xlsx'
@@ -65,7 +64,6 @@ def process_all_analysis():
         sales_data['단가'] = pd.to_numeric(sales_data['단가'], errors='coerce')
         sales_data['매출'] = sales_data['수량'] * sales_data['단가']
         sales_by_year = sales_data.groupby('년도')['매출'].sum().reset_index()
-
         cost_data = merged_data[
             (merged_data['매입매출구분(1-매출/2-매입)'] == 2) |
             (merged_data['판매비와 관리비'].notna())
@@ -178,6 +176,109 @@ def process_all_analysis():
         fig.write_html(html_file)
         print(f"매출/판관비/순이익 그래프 저장 완료: {html_file}")
 
+        # ====== 연도별 나이 대 별 매출 비중 ======
+        sales_administrative = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1]
+        merged_age = pd.merge(sales_administrative, oracle_data, on='유저번호')
+        merged_age['년도'] = pd.to_numeric(merged_age['년도'], errors='coerce')
+        bins = [10, 20, 30, 40, 50]  # 경계값 설정
+        labels = ['10대', '20대', '30대', '40대']  # 구간 이름
+        merged_age['나이대'] = pd.cut(merged_age['나이'], bins=bins, labels=labels, right=False)
+
+        year_age_spending = merged_age.groupby(['년도', '나이대'])['공급가액'].sum().reset_index()
+
+        years = sorted(year_age_spending['년도'].unique())
+        age_10_data = year_age_spending[year_age_spending['나이대'] == '10대'].set_index('년도')['공급가액']
+        age_20_data = year_age_spending[year_age_spending['나이대'] == '20대'].set_index('년도')['공급가액']
+        age_30_data = year_age_spending[year_age_spending['나이대'] == '30대'].set_index('년도')['공급가액']
+        age_40_data = year_age_spending[year_age_spending['나이대'] == '40대'].set_index('년도')['공급가액']
+
+        age_output = os.path.join(output_dir, "age_spending.xlsx")
+        year_age_spending.to_excel(age_output, index=False)
+        print(f"나이대별 매출 데이터 저장 완료: {age_output}")
+
+        # HTML 저장
+        for year in sorted(year_age_spending['년도'].unique()):
+            year_data = year_age_spending[year_age_spending['년도'] == year]
+            year_dir = os.path.join(output_dir_html, str(year))
+            os.makedirs(year_dir, exist_ok=True)
+
+            fig = go.Figure(data=[
+                go.Pie(
+                    labels=year_data['나이대'],
+                    values=year_data['공급가액'],
+                    hole=0.3,
+                    textinfo='label+percent'
+                )
+            ])
+            fig.update_layout(
+                title=f"{year}년 나이대별 매출 비중",
+                font=dict(family="Arial, sans-serif", size=12),
+                legend=dict(
+                    x=0,
+                    y=1,
+                    xanchor="left",
+                    yanchor="top"
+                )
+            )
+            html_file = os.path.join(year_dir, f"{year}_나이대별_매출.html")
+            fig.write_html(html_file)
+            print(f"{year}년 나이대별 매출 파이 차트 저장 완료: {html_file}")
+
+        # Plotly 그래프 생성
+        fig = go.Figure()
+
+        # 10대 매출 데이터 추가
+        fig.add_trace(go.Scatter(
+            x=years,
+            y=age_10_data,
+            mode='lines',  # 꺾은선 그래프로 설정
+            name='10대 매출',
+            line=dict(color='blue')
+        ))
+
+        # 20대 매출 데이터 추가
+        fig.add_trace(go.Scatter(
+            x=years,
+            y=age_20_data,
+            mode='lines',  # 꺾은선 그래프로 설정
+            name='20대 매출',
+            line=dict(color='red')
+        ))
+
+        # 30대 매출 데이터 추가
+        fig.add_trace(go.Scatter(
+            x=years,
+            y=age_30_data,
+            mode='lines',  # 꺾은선 그래프로 설정
+            name='30대 매출',
+            line=dict(color='green')
+        ))
+
+        # 40대 매출 데이터 추가
+        fig.add_trace(go.Scatter(
+            x=years,
+            y=age_40_data,
+            mode='lines',  # 꺾은선 그래프로 설정
+            name='40대 매출',
+            line=dict(color='yellow')
+        ))
+
+        # 그래프 레이아웃 설정
+        fig.update_layout(
+            title='연도별 나이대별 매출',
+            xaxis_title='년도',
+            yaxis_title='금액 (억 단위)',
+            yaxis=dict(tickformat='.1f'),  # Y축 단위를 소수점으로 설정
+            font=dict(family="Arial, sans-serif", size=12),
+            legend=dict(orientation="h", y=-0.2),  # 범례 위치
+        )
+
+        # HTML로 저장
+        html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
+        fig.write_html(html_file)
+
+        print(f"그래프 파일이 성공적으로 저장되었습니다: {html_file}")
+
         # ====== 연도별 성별 매출 비중 ======
         sales_administrative = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1]
         merged_gender = pd.merge(sales_administrative, oracle_data, on='유저번호')
@@ -190,8 +291,8 @@ def process_all_analysis():
         year_gender_spending.to_excel(output_file_path, index=False)
 
         years = sorted(year_gender_spending['년도'].unique())
-        male_data = year_gender_spending[year_gender_spending['성별'] == '남자'].set_index('년도')['공급가액']
-        female_data = year_gender_spending[year_gender_spending['성별'] == '여자'].set_index('년도')['공급가액']
+        male_data = year_gender_spending[year_gender_spending['성별'] == '남'].set_index('년도')['공급가액']
+        female_data = year_gender_spending[year_gender_spending['성별'] == '여'].set_index('년도')['공급가액']
 
         # Excel 저장
         gender_output = os.path.join(output_dir, "gender_spending.xlsx")
@@ -227,7 +328,7 @@ def process_all_analysis():
         fig.add_trace(go.Scatter(
             x=years,
             y=male_data,
-            mode='lines+markers',
+            mode='lines',  # 꺾은선 그래프로 설정
             name='남자 매출',
             line=dict(color='blue')
         ))
@@ -236,7 +337,7 @@ def process_all_analysis():
         fig.add_trace(go.Scatter(
             x=years,
             y=female_data,
-            mode='lines+markers',
+            mode='lines',  # 꺾은선 그래프로 설정
             name='여자 매출',
             line=dict(color='red')
         ))
@@ -259,12 +360,32 @@ def process_all_analysis():
         print(f"그래프 파일이 성공적으로 저장되었습니다: {html_file}")
 
         #### 여기부터
+        dsn = cx_Oracle.makedsn("localhost", 1521, service_name="xe")
+        connection = cx_Oracle.connect(user="c##finalProject", password="1234", dsn=dsn)
+
+        # 2. 오라클 데이터 쿼리 실행 및 읽기
+        oracle_query = "SELECT I.ITEM_NAME, I.SUB_CATEGORY_ID, SC.SUB_CATEGORY_NAME FROM ITEM I JOIN SUB_CATEGORY SC ON I.SUB_CATEGORY_ID = SC.ID"
+        cursor = connection.cursor()
+        cursor.execute(oracle_query)
+
+        # 오라클 데이터 -> Pandas DataFrame으로 변환
+        columns = [col[0] for col in cursor.description]  # 컬럼 이름 가져오기
+        data = cursor.fetchall()
+        oracle_item = pd.DataFrame(data, columns=columns)
+        # 오라클 연결 닫기
+        cursor.close()
+        connection.close()
+
+        print("오라클 데이터 읽기 완료")
+
+        # 3. 데이터 처리
+        oracle_item.replace(['-'], np.nan, inplace=True)
+        oracle_item.columns = ["품명", "카테고리 번호", "카테고리"]
 
         # ====== 연도별 품목별 공급가액 ======
         for year in sorted(net_profit['년도'].dropna().unique()):
             # 해당 연도의 데이터 필터링
             year_data = sales_data[sales_data['년도'] == year]
-
             # 연도별 디렉토리 생성
             year_dir = os.path.join(output_dir_html, str(year))
             os.makedirs(year_dir, exist_ok=True)
@@ -278,6 +399,19 @@ def process_all_analysis():
                 .reset_index()
             )
 
+            # 1. 품명 기준으로 데이터 병합
+            sales_price = pd.merge(sales_price, oracle_item, on="품명", how="left")
+
+            # 2. 카테고리 이름 기준으로 그룹화하여 공급가액 합계 계산
+            sales_price = (
+                sales_price.groupby("카테고리")["공급가액"]
+                .sum()
+                .sort_values(ascending=False)
+                .reset_index()
+            )
+
+            # 결과 확인
+            print(sales_price)
             # 엑셀 파일 저장 경로
             output_file_path = os.path.join(output_dir, f"{year}_상품별_판매량.xlsx")
             sales_price.to_excel(output_file_path, index=False)
@@ -286,7 +420,7 @@ def process_all_analysis():
             fig = go.Figure(
                 data=[
                     go.Bar(
-                        x=sales_price['품명'],
+                        x=sales_price['카테고리'],
                         y=sales_price['공급가액'],
                         marker=dict(color='skyblue'),
                         text=sales_price['공급가액'].round(2),  # 텍스트 값은 소수점 2자리로 표시
@@ -297,8 +431,8 @@ def process_all_analysis():
 
             # 레이아웃 설정
             fig.update_layout(
-                title=f"{year}년 품명별 공급가액 합계",
-                xaxis_title="품명",
+                title=f"{year}년 카테고리별 공급가액 합계",
+                xaxis_title="카테고리",
                 yaxis_title="공급가액 (단위: 억원)",  # 단위를 억 단위로 표시
                 xaxis=dict(tickangle=45),  # X축 라벨 회전
                 font=dict(family="Arial, sans-serif", size=12),
@@ -307,7 +441,7 @@ def process_all_analysis():
             )
 
             # HTML 파일로 저장
-            html_file = os.path.join(year_dir, f"{year}_상품별_판매량.html")
+            html_file = os.path.join(year_dir, f"{year}_카테고리별_판매량.html")
             fig.write_html(html_file)
 
             print(f"{year}년 데이터가 저장되었습니다: {output_file_path}")
@@ -321,16 +455,25 @@ def process_all_analysis():
             .sort_values(ascending=False)
             .reset_index()
         )
+        # 1. 품명 기준으로 데이터 병합
+        sales_price = pd.merge(sales_price, oracle_item, on="품명", how="left")
 
+        # 2. 카테고리 이름 기준으로 그룹화하여 공급가액 합계 계산
+        sales_price = (
+            sales_price.groupby("카테고리")["공급가액"]
+            .sum()
+            .sort_values(ascending=False)
+            .reset_index()
+        )
         # 엑셀 파일로 저장
-        sales_excel_path = os.path.join(output_dir, "상품별_판매량.xlsx")
+        sales_excel_path = os.path.join(output_dir, "카테고리별_판매량.xlsx")
         sales_price.to_excel(sales_excel_path, index=False)
 
         # Plotly 바 플롯 생성
         fig = go.Figure(
             data=[
                 go.Bar(
-                    x=sales_price['품명'],
+                    x=sales_price['카테고리'],
                     y=sales_price['공급가액'],
                     marker=dict(color='skyblue'),
                     text=sales_price['공급가액'].round(2),  # 텍스트 값은 소수점 2자리로 표시
@@ -341,8 +484,8 @@ def process_all_analysis():
 
         # 그래프 레이아웃 설정
         fig.update_layout(
-            title="품명별 공급가액 합계",
-            xaxis_title="품명",
+            title="카테고리별 공급가액 합계",
+            xaxis_title="카테고리",
             yaxis_title="공급가액 (단위: 억원)",  # 단위를 억 단위로 표시
             xaxis=dict(tickangle=45),  # X축 라벨 회전
             font=dict(family="Arial, sans-serif", size=12),
@@ -352,7 +495,7 @@ def process_all_analysis():
 
         # HTML 파일로 저장
 
-        sales_html_path = os.path.join(output_dir_html, "연도별_상품별_판매량.html")
+        sales_html_path = os.path.join(output_dir_html, "연도별_카테고리별_판매량.html")
         fig.write_html(sales_html_path)
 
         print(f"품명별 공급가액 엑셀 파일이 저장되었습니다: {sales_excel_path}")
@@ -431,16 +574,6 @@ def process_all_analysis():
                             name=f'{int(percent * 100)}% 경계'
                         )
                     )
-
-                fig.add_trace(
-                    go.Scatter(
-                        x=[cutoff_index / len(sales_user_value_sorted), cutoff_index / len(sales_user_value_sorted)],
-                        y=[0, sales_user_value_sorted['누적금액'].iloc[cutoff_index - 1] / 1e8],
-                        mode='lines',
-                        line=dict(color='red', dash='dash'),
-                        name=f'{int(percent * 100)}% 경계'
-                    )
-                )
 
             # 그래프 레이아웃 설정
             fig.update_layout(

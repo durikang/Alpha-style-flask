@@ -93,7 +93,8 @@ def graph_view():
         if year == "all":
             file_paths = [
                 './analysis_html/연도별_재무상태표.html',
-                './analysis_html/연도별_상품별_판매량.html',
+                './analysis_html/연도별_카테고리별_판매량.html',
+                './analysis_html/연도별_나이대별_매출.html',
                 './analysis_html/연도별_성별_매출.html',
                 './analysis_html/전체_판매량_VIP.html',
                 './analysis_html/연도별_지역별_판매량.html'
@@ -101,7 +102,8 @@ def graph_view():
         else:
             file_paths = [
                 f'./analysis_html/{year}/{year}_재무상태표.html',
-                f'./analysis_html/{year}/{year}_상품별_판매량.html',
+                f'./analysis_html/{year}/{year}_카테고리별_판매량.html',
+                f'./analysis_html/{year}/{year}_나이대별_매출.html',
                 f'./analysis_html/{year}/{year}_성별_매출.html',
                 f'./analysis_html/{year}/{year}_VIP_유저.html',
                 f'./analysis_html/{year}/{year}_지역별_판매량.html'
