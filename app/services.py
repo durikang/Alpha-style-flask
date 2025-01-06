@@ -3,7 +3,9 @@ import os
 
 def handle_file_upload(files):
     UPLOAD_FOLDER = './uploads'
-    MERGED_FOLDER = './app/merged'
+    MERGED_FOLDER = './merged'
+
+    os.makedirs(MERGED_FOLDER, exist_ok=True)
 
     file_paths = []
     try:
