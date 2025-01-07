@@ -6,7 +6,7 @@ def generate_json_from_excel(year=None):
         # 파일 경로 설정
         summary_files = ['./analysis/sale.xlsx', './analysis/cost.xlsx', './analysis/net_profit.xlsx']
         category_base_path = './analysis'
-        category_file = f'{category_base_path}/{year}_카테고리별_판매량.xlsx' if year and year != "all" else f'{category_base_path}/카테고리별_판매량.xlsx'
+        category_file = f'{category_base_path}/{year}_카테고리별_판매량.xlsx' if year and year != "all" else f'{category_base_path}/연도별_카테고리별_판매량.xlsx'
 
         # 데이터를 읽어와 병합
         summary_data = []

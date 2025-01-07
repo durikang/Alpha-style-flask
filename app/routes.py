@@ -84,7 +84,7 @@ def graph_view():
                 './analysis_html/연도별_카테고리별_판매량.html',
                 './analysis_html/연도별_나이대별_매출.html',
                 './analysis_html/연도별_성별_매출.html',
-                './analysis_html/전체_판매량_VIP.html',
+                './analysis_html/연도별_VIP_유저.html',
                 './analysis_html/연도별_지역별_판매량.html'
             ]
         else:
@@ -144,7 +144,24 @@ def get_table_data():
             "category_sales": [row for row in excel_data['category_sales'] if str(row['년도']) == year] if year != 'all' else excel_data['category_sales'],
         }
 
+        # Dynamic Analysis 결과 로드
+        dynamic_output_path = "./analysis/dynamic_analysis.json"
+        if os.path.exists(dynamic_output_path):
+            with open(dynamic_output_path, 'r', encoding='utf-8') as f:
+                dynamic_analysis_results = json.load(f)
+        else:
+            dynamic_analysis_results = []
+
+        # 연도 필터 적용 (연도가 "all"인 경우 전체 반환)
+        filtered_dynamic_analysis = [
+            result for result in dynamic_analysis_results if f"{year}년" in result
+        ] if year != "all" else dynamic_analysis_results
+
+        # Dynamic Analysis 결과 추가
+        filtered_data['dynamic_analysis'] = filtered_dynamic_analysis
+
         return jsonify(filtered_data), 200
+
     except Exception as e:
         print(f"[ERROR] Exception in /table-data: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -170,7 +187,7 @@ def download_files():
                 './analysis/sale.xlsx',
                 './analysis/나이대별_판매량.xlsx',
                 './analysis/성별별_판매량.xlsx',
-                './analysis/카테고리별_판매량.xlsx'
+                './analysis/연도별_카테고리별_판매량.xlsx'
             ]
         else:
             png_paths = [
