@@ -94,11 +94,11 @@ def process_all_analysis():
         net_profit.fillna(0, inplace=True)
 
 
-
         # Excel 파일 저장
         sale_output = os.path.join(output_dir, "sale.xlsx")
         cost_output = os.path.join(output_dir, "cost.xlsx")
         net_profit_output = os.path.join(output_dir, "net_profit.xlsx")
+
         net_profit[['년도', '매출']].to_excel(sale_output, index=False)
         net_profit[['년도', '판관비']].to_excel(cost_output, index=False)
         net_profit[['년도', '당기순이익']].to_excel(net_profit_output, index=False)
@@ -524,9 +524,27 @@ def process_all_analysis():
             .sort_values(ascending=False)
             .reset_index()
         )
+
+        excel_sales_price = (
+            year_data.groupby('품명')['공급가액']
+            .sum()
+            .sort_values(ascending=False)
+            .reset_index()
+        )
+
+        excel_sales_price = pd.merge(excel_sales_price, oracle_item, on="품명", how="left")
+
+        excel_sales_price = (
+            excel_sales_price.groupby("카테고리")["공급가액"]
+            .sum()
+            .sort_values(ascending=False)
+            .reset_index()
+        )
+
+
         # 엑셀 파일로 저장
         sales_excel_path = os.path.join(output_dir, "카테고리별_판매량.xlsx")
-        sales_price.to_excel(sales_excel_path, index=False)
+        excel_sales_price.to_excel(sales_excel_path, index=False)
 
         # Plotly 바 플롯 생성
         fig = go.Figure(

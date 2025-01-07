@@ -122,6 +122,33 @@ def graph_view():
         return jsonify({'error': str(e)}), 500
 
 
+
+
+@main_bp.route('/table-data', methods=['POST'])
+def get_table_data():
+    try:
+        # 요청에서 연도 가져오기
+        data = request.json
+        year = data.get('year')
+
+        # 엑셀 데이터 로드
+        excel_data = load_excel_data()
+        if not excel_data:
+            return jsonify({'error': 'Failed to load data'}), 500
+
+        # 연도별 데이터 필터링
+        filtered_data = {
+            "cost": [row for row in excel_data['cost'] if str(row['년도']) == year] if year != 'all' else excel_data['cost'],
+            "net_profit": [row for row in excel_data['net_profit'] if str(row['년도']) == year] if year != 'all' else excel_data['net_profit'],
+            "sale": [row for row in excel_data['sale'] if str(row['년도']) == year] if year != 'all' else excel_data['sale'],
+            "category_sales": [row for row in excel_data['category_sales'] if str(row['년도']) == year] if year != 'all' else excel_data['category_sales'],
+        }
+
+        return jsonify(filtered_data), 200
+    except Exception as e:
+        print(f"[ERROR] Exception in /table-data: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @main_bp.route('/download', methods=['POST'])
 def download_files():
     try:
@@ -178,29 +205,3 @@ def download_files():
     except Exception as e:
         print(f"[EXCEPTION] Exception occurred: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
-@main_bp.route('/table-data', methods=['POST'])
-def get_table_data():
-    try:
-        # 요청에서 연도 가져오기
-        data = request.json
-        year = data.get('year')
-
-        # 엑셀 데이터 로드
-        excel_data = load_excel_data()
-        if not excel_data:
-            return jsonify({'error': 'Failed to load data'}), 500
-
-        # 연도별 데이터 필터링
-        filtered_data = {
-            "cost": [row for row in excel_data['cost'] if str(row['년도']) == year] if year != 'all' else excel_data['cost'],
-            "net_profit": [row for row in excel_data['net_profit'] if str(row['년도']) == year] if year != 'all' else excel_data['net_profit'],
-            "sale": [row for row in excel_data['sale'] if str(row['년도']) == year] if year != 'all' else excel_data['sale'],
-            "category_sales": [row for row in excel_data['category_sales'] if str(row['년도']) == year] if year != 'all' else excel_data['category_sales'],
-        }
-
-        return jsonify(filtered_data), 200
-    except Exception as e:
-        print(f"[ERROR] Exception in /table-data: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
