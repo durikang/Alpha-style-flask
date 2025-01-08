@@ -717,14 +717,22 @@ def save_map_as_png(html_file_path, png_file_path):
     finally:
         driver.quit()
 
-def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir_xlsx, output_dir_html, output_dir_png):
+
+import os
+import pandas as pd
+import folium
+
+
+def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir_xlsx, output_dir_html,
+                 output_dir_png):
     """
-    Perform area-wise sales analysis and generate corresponding bubble maps.
+    Perform area-wise sales analysis, generate corresponding bubble maps, and save top 5 data to Excel files.
     """
-    # Map 지역 to 지역코드
+    # Map '지역' to '지역코드'
     oracle_data['지역코드'] = oracle_data['지역'].map(region_data)
     oracle_data['지역코드'] = oracle_data['지역코드'].astype('Int64')  # Nullable Integer
 
+    # Filter sales data where '매입매출구분(1-매출/2-매입)' == 1
     sales_data = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1].copy()
     merged_user_data = pd.merge(oracle_data, sales_data, on='유저번호')
 
@@ -732,18 +740,23 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
     geo = load_geojson(geo_file_path)
     region_coordinates = map_region_coordinates(geo)
 
-    # Prepare data
-    merged_user_area = merged_user_data[['지역코드', '년도', '공급가액']]
+    # Prepare aggregated data
+    merged_user_area = merged_user_data[['지역코드', '년도', '공급가액', '유저번호']]
     user_supply_sum = merged_user_area.groupby(['지역코드', '년도'])['공급가액'].sum().reset_index()
 
-    # Generate Bubble Charts per Year
+    # Generate Bubble Charts and Excel files per Year
     for year in sorted(user_supply_sum['년도'].unique()):
         year_data = user_supply_sum[user_supply_sum['년도'] == year]
+
+        # Create directories for HTML and PNG outputs
         year_dir_html = os.path.join(output_dir_html, str(year))
         year_dir_png = os.path.join(output_dir_png, str(year))
+        year_dir_xlsx = os.path.join(output_dir_xlsx, str(year))  # Directory for Excel
         os.makedirs(year_dir_html, exist_ok=True)
         os.makedirs(year_dir_png, exist_ok=True)
+        os.makedirs(year_dir_xlsx, exist_ok=True)  # Ensure Excel directory exists
 
+        # Initialize Folium map
         map_center = [35.96, 127.1]  # Center of South Korea
         map_year = folium.Map(location=map_center, zoom_start=7, tiles='cartodbpositron')
 
@@ -763,17 +776,43 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
                     popup=f'지역 코드: {region_code}<br>공급가액: {supply_value:,.0f}원'
                 ).add_to(map_year)
 
+        # Save map as HTML
         html_file_path = os.path.join(year_dir_html, f'{year}_지역별_판매량.html')
-        png_file_path = os.path.join(year_dir_png, f'{year}_지역별_판매량.png')
         map_year.save(html_file_path)
         print(f"'{html_file_path}'에 저장 완료")
 
-        # Save as PNG
+        # Save map as PNG
+        png_file_path = os.path.join(year_dir_png, f'{year}_지역별_판매량.png')
         save_map_as_png(html_file_path, png_file_path)
 
-    # Generate Combined Bubble Chart
+        # ---- Add Excel Saving Functionality ----
+
+        # Get top 5 regions by '공급가액' for the year
+        top5_year = year_data.sort_values(by='공급가액', ascending=False).head(5)
+
+        # Merge with original data to include detailed records
+        # Assuming '지역코드' and '년도' are the keys to filter detailed data
+        detailed_top5 = pd.merge(merged_user_area, top5_year, on=['지역코드', '년도'], suffixes=('', '_total'))
+
+        # Optionally, merge with 'oracle_data' or other relevant data to include more details
+        # For example, to include '지역' names:
+        detailed_top5 = pd.merge(detailed_top5, oracle_data[['유저번호', '지역']], on='유저번호', how='left')
+
+        # Define Excel file path
+        excel_file_path = os.path.join(year_dir_xlsx, f'{year}_지역별_판매량.xlsx')
+
+        # Save to Excel
+        with pd.ExcelWriter(excel_file_path, engine='xlsxwriter') as writer:
+            top5_year.to_excel(writer, sheet_name='상위5_집계', index=False)
+            detailed_top5.to_excel(writer, sheet_name='상위5_상세', index=False)
+        print(f"'{excel_file_path}'에 상위 5개 지역 데이터 저장 완료")
+
+    # ---- Generate Combined Bubble Chart and Excel ----
+
+    # Aggregate total supply by region
     user_supply_sum_total = merged_user_area.groupby(['지역코드'])['공급가액'].sum().reset_index()
 
+    # Initialize Folium map for combined data
     combined_map = folium.Map(location=[35.96, 127.1], zoom_start=7, tiles='cartodbpositron')
     for _, row in user_supply_sum_total.iterrows():
         region_code = str(row['지역코드'])
@@ -791,13 +830,35 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
                 popup=f'지역 코드: {region_code}<br>공급가액: {supply_value:,.0f}원'
             ).add_to(combined_map)
 
-    html_file_path = os.path.join(output_dir_html, "연도별_지역별_판매량.html")
-    png_file_path = os.path.join(output_dir_png, "연도별_지역별_판매량.png")
-    combined_map.save(html_file_path)
-    print(f"'{html_file_path}'에 저장 완료")
+    # Save combined map as HTML
+    combined_html_path = os.path.join(output_dir_html, "연도별_지역별_판매량.html")
+    combined_map.save(combined_html_path)
+    print(f"'{combined_html_path}'에 저장 완료")
 
-    # Save as PNG
-    save_map_as_png(html_file_path, png_file_path)
+    # Save combined map as PNG
+    combined_png_path = os.path.join(output_dir_png, "연도별_지역별_판매량.png")
+    save_map_as_png(combined_html_path, combined_png_path)
+
+    # ---- Add Excel Saving for Combined Data ----
+
+    # Get top 5 regions by total '공급가액'
+    top5_combined = user_supply_sum_total.sort_values(by='공급가액', ascending=False).head(5)
+
+    # Merge with original data to include detailed records
+    detailed_top5_combined = pd.merge(merged_user_area, top5_combined, on='지역코드', suffixes=('', '_total'))
+
+    # Optionally, merge with 'oracle_data' or other relevant data to include more details
+    detailed_top5_combined = pd.merge(detailed_top5_combined, oracle_data[['유저번호', '지역']], on='유저번호', how='left')
+
+    # Define Excel file path for combined data
+    combined_excel_path = os.path.join(output_dir_xlsx, "연도별_상위5_지역별_판매량.xlsx")
+
+    # Save to Excel
+    with pd.ExcelWriter(combined_excel_path, engine='xlsxwriter') as writer:
+        top5_combined.to_excel(writer, sheet_name='상위5_집계', index=False)
+        detailed_top5_combined.to_excel(writer, sheet_name='상위5_상세', index=False)
+    print(f"'{combined_excel_path}'에 연도별 상위 5개 지역 데이터 저장 완료")
+
 
 # ----------------------------
 # Main Processing Function

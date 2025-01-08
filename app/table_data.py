@@ -123,7 +123,7 @@ def generate_json_from_excel(year=None):
             "category_sales": category_json,
             "gender_sales": gender_json,
             "age_group_sales": age_json,
-            "vip_users": vip_users_json  # VIP 유저 데이터를 JSON에 포함
+            "vip_sales": vip_users_json  # VIP 유저 데이터를 JSON에 포함
         }
 
         # JSON 저장
