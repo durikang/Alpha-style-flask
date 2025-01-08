@@ -6,16 +6,37 @@ import json
 import folium
 import cx_Oracle
 from datetime import datetime
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+import logging
+
 
 # ----------------------------
 # Utility Functions
 # ----------------------------
+def create_output_paths(base_path="./analysis"):
+    """
+    Create and return paths for output directories (base, html, png).
+    """
+    paths = {
+        "output_dir": base_path,
+        "output_dir_xlsx": os.path.join(base_path, "xlsx"),
+        "output_dir_html": os.path.join(base_path, "html"),
+        "output_dir_png": os.path.join(base_path, "png"),
+    }
+    for path in paths.values():
+        os.makedirs(path, exist_ok=True)
+    return paths
 
-def create_directories(output_dir, output_dir_html, output_dir_png):
+def create_directories(output_dir, output_dir_xlsx, output_dir_html, output_dir_png):
     """
     Create necessary output directories if they do not exist.
     """
     os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir_xlsx, exist_ok=True)
     os.makedirs(output_dir_html, exist_ok=True)
     os.makedirs(output_dir_png, exist_ok=True)
 
@@ -125,9 +146,13 @@ def calculate_sales(merged_data):
     sales_data = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1].copy()
     sales_data['년도'] = sales_data['년도'].astype(str).str.extract(r'(\d{4})')[0].astype(float)
     sales_data['공급가액'] = pd.to_numeric(sales_data['공급가액'], errors='coerce')
-    sales_by_year = sales_data.groupby('년도')['공급가액'].sum().reset_index()
-    sales_by_year.rename(columns={'공급가액': '매출'}, inplace=True)
+    sales_data['수량'] = pd.to_numeric(sales_data['수량'], errors='coerce')
+    sales_data['단가'] = pd.to_numeric(sales_data['단가'], errors='coerce')
+    sales_data['매출'] = sales_data['수량'] * sales_data['단가']
+    sales_by_year = sales_data.groupby('년도')['매출'].sum().reset_index()
+    sales_by_year.rename(columns={'매출': '매출'}, inplace=True)
     return sales_by_year, sales_data
+
 
 def calculate_cost(merged_data):
     """
@@ -140,9 +165,12 @@ def calculate_cost(merged_data):
     cost_data['년도'] = cost_data['년도'].astype(str).str.extract(r'(\d{4})')[0].astype(float)
     cost_data['판매비와 관리비'] = pd.to_numeric(cost_data['판매비와 관리비'], errors='coerce')
     cost_data['공급가액'] = pd.to_numeric(cost_data['공급가액'], errors='coerce')
+    cost_data['수량'] = pd.to_numeric(cost_data['수량'], errors='coerce')
+    cost_data['단가'] = pd.to_numeric(cost_data['단가'], errors='coerce')
+    cost_data['매출'] = cost_data['수량'] * cost_data['단가']
 
     cost_by_year = cost_data.groupby('년도').agg(
-        매입_합계=('공급가액', 'sum'),
+        매입_합계=('매출', 'sum'),
         판관비_합계=('판매비와 관리비', 'sum')
     ).reset_index()
     cost_by_year['판관비'] = cost_by_year['매입_합계'] + cost_by_year['판관비_합계']
@@ -167,14 +195,14 @@ def calculate_net_profit(sales_by_year, cost_by_year):
     return net_profit, data_net_profit
 
 
-def save_financial_metrics(data_net_profit, output_dir):
+def save_financial_metrics(data_net_profit, output_dir_xlsx):
     """
     Save financial metrics (sales, costs, net profit) to Excel files.
     """
     # 파일 저장 경로
-    sale_output = os.path.join(output_dir, "sale.xlsx")
-    cost_output = os.path.join(output_dir, "cost.xlsx")
-    net_profit_output = os.path.join(output_dir, "net_profit.xlsx")
+    sale_output = os.path.join(output_dir_xlsx, "sale.xlsx")
+    cost_output = os.path.join(output_dir_xlsx, "cost.xlsx")
+    net_profit_output = os.path.join(output_dir_xlsx, "net_profit.xlsx")
 
     # 억 단위 변환 전 데이터 저장
     data_net_profit[['년도', '매출']].to_excel(sale_output, index=False)
@@ -183,7 +211,9 @@ def save_financial_metrics(data_net_profit, output_dir):
 
     print(f"Financial metrics Excel files saved: {sale_output}, {cost_output}, {net_profit_output}")
 
+
 def plot_financial_data(net_profit, output_dir_html, output_dir_png):
+
     """
     Generate plots for financial data (sales, costs, net profit) by year.
     """
@@ -238,15 +268,12 @@ def plot_financial_data(net_profit, output_dir_html, output_dir_png):
     fig.write_image(png_file, width=1800, height=1170)
 
 
-# ----------------------------
-# Category-wise Analysis
-# ----------------------------
 
-def analyze_category(net_profit, sales_data, oracle_item, output_dir, output_dir_html, output_dir_png):
+def analyze_category(net_profit, sales_data, oracle_item, output_dir_xlsx, output_dir_html, output_dir_png):
     """
     Perform category-wise sales analysis and generate corresponding plots.
     """
-    all_years_category_data = []  # 전체 연도의 카테고리 데이터를 저장할 리스트
+    all_years_category_data = []  # 연도별 연도의 카테고리 데이터를 저장할 리스트
 
     for year in sorted(net_profit['년도'].dropna().unique()):
         # `년도`를 정수형으로 변환
@@ -278,7 +305,7 @@ def analyze_category(net_profit, sales_data, oracle_item, output_dir, output_dir
         all_years_category_data.append(sales_price_by_category_raw)
 
         # Save to Excel for category (억 단위 변환 전)
-        category_output_path = os.path.join(output_dir, f"{year}_카테고리별_판매량.xlsx")
+        category_output_path = os.path.join(output_dir_xlsx, f"{year}_카테고리별_판매량.xlsx")
         sales_price_by_category_raw.to_excel(category_output_path, index=False)
         print(f"{year}년 카테고리별 판매량 Excel 파일 저장 완료: {category_output_path}")
 
@@ -315,7 +342,7 @@ def analyze_category(net_profit, sales_data, oracle_item, output_dir, output_dir
     # Save all years category data to a single Excel file
     all_years_category_df = pd.concat(all_years_category_data, ignore_index=True)
 
-    # 전체 연도 카테고리별 총합 계산
+    # 연도별 연도 카테고리별 총합 계산
     total_category_sum = (
         all_years_category_df.groupby("카테고리")["공급가액"]
         .sum()
@@ -323,15 +350,12 @@ def analyze_category(net_profit, sales_data, oracle_item, output_dir, output_dir
         .reset_index()
     )
 
+
     # Save total sum to Excel
-    total_category_output_path = os.path.join(output_dir, "연도별_카테고리별_판매량.xlsx")
+    total_category_output_path = os.path.join(output_dir_xlsx, "연도별_카테고리별_판매량.xlsx")
     total_category_sum.to_excel(total_category_output_path, index=False)
     print(f"연도별 연도 카테고리별 판매량 Excel 파일 저장 완료: {total_category_output_path}")
-
     total_category_sum['공급가액'] /= 1e8  # 억 단위로 변환
-
-
-
     # Plotly Bar Chart for total category sum
     fig = go.Figure(
         data=[
@@ -354,17 +378,15 @@ def analyze_category(net_profit, sales_data, oracle_item, output_dir, output_dir
     )
 
     # Save total category sum plot
-    total_category_html_file = os.path.join(output_dir_html, "연도별_카테고리_판매량.html")
-    total_category_png_file = os.path.join(output_dir_png, "연도별_카테고리_판매량.png")
+    total_category_html_file = os.path.join(output_dir_html, "연도별_카테고리별_판매량.html")
+    total_category_png_file = os.path.join(output_dir_png, "연도별_카테고리별_판매량.png")
     save_plotly_fig(fig, total_category_html_file, total_category_png_file)
-
-
 
 # ----------------------------
 # Age-group-wise Analysis
 # ----------------------------
 
-def analyze_age_group(net_profit, merged_data, oracle_data, output_dir, output_dir_html, output_dir_png):
+def analyze_age_group(net_profit, merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png):
     """
     Perform age-group-wise sales analysis and generate corresponding plots.
     """
@@ -377,19 +399,23 @@ def analyze_age_group(net_profit, merged_data, oracle_data, output_dir, output_d
 
     year_age_spending = merged_age.groupby(['년도', '나이대'])['공급가액'].sum().reset_index()
 
-    # Save to Excel
-    age_output = os.path.join(output_dir, "나이대별_판매량.xlsx")
+    # Save 연도별 나이대별 매출 데이터를 Excel로 저장
+    age_output = os.path.join(output_dir_xlsx, "나이대별_판매량.xlsx")
     year_age_spending.to_excel(age_output, index=False)
     print(f"나이대별 매출 데이터 Excel 파일 저장 완료: {age_output}")
 
-
-    # Generate Pie Charts per Year
-    for year in sorted(year_age_spending['년도'].unique()):
+    # 연도별 나이대별 데이터를 Excel로 저장
+    for year in sorted(year_age_spending['년도'].dropna().unique()):
         year_data = year_age_spending[year_age_spending['년도'] == year]
         year_dir_html = os.path.join(output_dir_html, str(year))
         year_dir_png = os.path.join(output_dir_png, str(year))
         os.makedirs(year_dir_html, exist_ok=True)
         os.makedirs(year_dir_png, exist_ok=True)
+        year_excel_output = os.path.join(output_dir_xlsx, f"{year}_나이대별_판매량.xlsx")
+        year_data.to_excel(year_excel_output, index=False)
+        print(f"{year}년 나이대별 매출 데이터 Excel 파일 저장 완료: {year_excel_output}")
+
+
 
         fig = go.Figure(data=[
             go.Pie(
@@ -448,7 +474,7 @@ def analyze_age_group(net_profit, merged_data, oracle_data, output_dir, output_d
 # Gender-wise Analysis
 # ----------------------------
 
-def analyze_gender(net_profit, merged_data, oracle_data, output_dir, output_dir_html, output_dir_png):
+def analyze_gender(net_profit, merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png):
     """
     Perform gender-wise sales analysis and generate corresponding plots.
     """
@@ -457,19 +483,25 @@ def analyze_gender(net_profit, merged_data, oracle_data, output_dir, output_dir_
     merged_gender['년도'] = pd.to_numeric(merged_gender['년도'], errors='coerce')
     year_gender_spending = merged_gender.groupby(['년도', '성별'])['공급가액'].sum().reset_index()
 
-    # Save to Excel
-    gender_output = os.path.join(output_dir, "성별별_판매량.xlsx")
+    # Save 연도별 성별 매출 데이터를 Excel로 저장
+    gender_output = os.path.join(output_dir_xlsx, "성별별_판매량.xlsx")
     year_gender_spending.to_excel(gender_output, index=False)
     print(f"성별 매출 데이터 Excel 파일 저장 완료: {gender_output}")
 
-    # Generate Pie Charts per Year
-    for year in sorted(year_gender_spending['년도'].unique()):
+    # Generate Pie Charts 및 연도별 Excel 파일 생성
+    for year in sorted(year_gender_spending['년도'].dropna().unique()):
         year_data = year_gender_spending[year_gender_spending['년도'] == year]
-        year_dir_html = os.path.join(output_dir_html, str(year))
-        year_dir_png = os.path.join(output_dir_png, str(year))
+        year_dir_html = os.path.join(output_dir_html, str(int(year)))
+        year_dir_png = os.path.join(output_dir_png, str(int(year)))
         os.makedirs(year_dir_html, exist_ok=True)
         os.makedirs(year_dir_png, exist_ok=True)
 
+        # 연도별 성별 매출 데이터를 Excel로 저장
+        year_excel_output = os.path.join(output_dir_xlsx, f"{year}_성별_매출.xlsx")
+        year_data.to_excel(year_excel_output, index=False)
+        print(f"{year}년 성별 매출 데이터 Excel 파일 저장 완료: {year_excel_output}")
+
+        # 파이 차트 생성
         fig = go.Figure(data=[
             go.Pie(
                 labels=year_data['성별'],
@@ -489,6 +521,7 @@ def analyze_gender(net_profit, merged_data, oracle_data, output_dir, output_dir_
             )
         )
 
+        # HTML 및 PNG 파일로 저장
         html_file = os.path.join(year_dir_html, f"{year}_성별_매출.html")
         png_file = os.path.join(year_dir_png, f"{year}_성별_매출.png")
         save_plotly_fig(fig, html_file, png_file)
@@ -523,12 +556,11 @@ def analyze_gender(net_profit, merged_data, oracle_data, output_dir, output_dir_
     png_file = os.path.join(output_dir_png, "연도별_성별_매출.png")
     save_plotly_fig(fig, html_file, png_file)
 
-    return year_gender_spending, gender_aggregated
 # ----------------------------
 # VIP Users Analysis
 # ----------------------------
 
-def analyze_vip_users(merged_data, oracle_data, output_dir, output_dir_html, output_dir_png):
+def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png):
     """
     Identify VIP users based on cumulative spending and generate corresponding plots.
     """
@@ -538,8 +570,8 @@ def analyze_vip_users(merged_data, oracle_data, output_dir, output_dir_html, out
 
     for year in sorted(years):
         year_data = merged_gender[merged_gender['년도'] == year]
-        year_dir_html = os.path.join(output_dir_html, str(year))
-        year_dir_png = os.path.join(output_dir_png, str(year))
+        year_dir_html = os.path.join(output_dir_html, str(int(year)))
+        year_dir_png = os.path.join(output_dir_png, str(int(year)))
         os.makedirs(year_dir_html, exist_ok=True)
         os.makedirs(year_dir_png, exist_ok=True)
 
@@ -551,17 +583,33 @@ def analyze_vip_users(merged_data, oracle_data, output_dir, output_dir_html, out
             .reset_index()
         )
         sales_user_quantity['누적금액'] = sales_user_quantity['공급가액'].cumsum()
-        sales_user_quantity /= 1e8  # Convert to 억 단위
 
-        # Save to Excel
-        output_file_path = os.path.join(output_dir, f"{year}_VIP_유저.xlsx")
-        sales_user_quantity.to_excel(output_file_path, index=False)
-        print(f"{year}년 VIP 유저 Excel 파일 저장 완료: {output_file_path}")
+        # Extract top percentages (10%, 20%, 30%)
+        percentages = [0.1, 0.2, 0.3]
+        percent_data = []
+        total_spending = sales_user_quantity['공급가액'].sum()
+
+        for percent in percentages:
+            cutoff_index = int(np.ceil(len(sales_user_quantity) * percent))
+            if cutoff_index > 0:
+                top_users = sales_user_quantity.iloc[:cutoff_index].copy()
+                spending = top_users['공급가액'].sum()
+                percent_data.append({
+                    '연도': int(year),
+                    '비율': f"상위 {int(percent * 100)}%",
+                    '공급가액': spending  # '공급가액'으로 컬럼명 변경
+                })
+
+        # Save percentage data to Excel
+        percent_df = pd.DataFrame(percent_data)
+        percent_output_path = os.path.join(output_dir_xlsx, f"{year}_VIP_유저.xlsx")
+        percent_df.to_excel(percent_output_path, index=False)
+        print(f"{year}년 VIP 유저 데이터 Excel 파일 저장 완료: {percent_output_path}")
 
         # Prepare data for plotting
+        sales_user_quantity['누적금액'] /= 1e8  # Convert to 억 단위 for plotting
         max_value = sales_user_quantity['누적금액'].max()
         x_vals = np.linspace(0, 1, len(sales_user_quantity))
-        percentages = [0.1, 0.2, 0.3]
         cutoff_indices = [int(np.ceil(len(sales_user_quantity) * p)) for p in percentages]
 
         # Plotly Area Chart
@@ -591,7 +639,7 @@ def analyze_vip_users(merged_data, oracle_data, output_dir, output_dir_html, out
                 )
 
         fig.update_layout(
-            title=f"{int(year)}년 상위 유저 소비 금액 누적 영역 그래프 (억 단위)",
+            title=f"{year}년 상위 유저 소비 금액 누적 영역 그래프 (억 단위)",
             xaxis=dict(
                 title="유저 비율",
                 tickvals=np.linspace(0, 1, 11),
@@ -620,72 +668,56 @@ def analyze_vip_users(merged_data, oracle_data, output_dir, output_dir_html, out
         .reset_index()
     )
     sales_user_quantity_total['누적금액'] = sales_user_quantity_total['공급가액'].cumsum()
-    sales_user_quantity_total /= 1e8  # Convert to 억 단위
 
-    # Save to Excel
-    output_file_path = os.path.join(output_dir, "연도별_VIP_유저.xlsx")
-    sales_user_quantity_total.to_excel(output_file_path, index=False)
-    print(f"연도별 VIP 유저 Excel 파일 저장 완료: {output_file_path}")
-
-    # Prepare data for plotting
-    max_value = sales_user_quantity_total['누적금액'].max()
-    x_vals = np.linspace(0, 1, len(sales_user_quantity_total))
-    percentages = [0.1, 0.2, 0.3]
-    cutoff_indices = [int(np.ceil(len(sales_user_quantity_total) * p)) for p in percentages]
-
-    # Plotly Area Chart
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Scatter(
-            x=x_vals,
-            y=sales_user_quantity_total['누적금액'],
-            fill='tozeroy',
-            mode='none',
-            fillcolor='skyblue',
-            name='누적 금액 (억 단위)'
-        )
-    )
-
-    for cutoff_index, percent in zip(cutoff_indices, percentages):
+    # Extract overall top percentages (10%, 20%, 30%)
+    percent_data_total = []
+    for percent in percentages:
+        cutoff_index = int(np.ceil(len(sales_user_quantity_total) * percent))
         if cutoff_index > 0:
-            fig.add_trace(
-                go.Scatter(
-                    x=[cutoff_index / len(sales_user_quantity_total)] * 2,
-                    y=[0, sales_user_quantity_total['누적금액'].iloc[cutoff_index - 1]],
-                    mode='lines',
-                    line=dict(color='red', dash='dash'),
-                    name=f'{int(percent * 100)}% 경계'
-                )
-            )
+            top_users_total = sales_user_quantity_total.iloc[:cutoff_index].copy()
+            spending_total = top_users_total['공급가액'].sum()
+            percent_data_total.append({
+                '연도': "연도별",
+                '비율': f"상위 {int(percent * 100)}%",
+                '공급가액': spending_total  # '공급가액'으로 컬럼명 변경
+            })
 
-    fig.update_layout(
-        title="연도별 상위 유저 소비 금액 누적 영역 그래프 (억 단위)",
-        xaxis=dict(
-            title="유저 비율",
-            tickvals=np.linspace(0, 1, 11),
-            ticktext=[f"{int(i * 100)}%" for i in np.linspace(0, 1, 11)]
-        ),
-        yaxis=dict(
-            title="누적 금액 (억원)",
-            range=[0, max_value],
-            tickformat=".1f"
-        ),
-        font=dict(family="Arial, sans-serif", size=12),
-        legend=dict(orientation="h", y=-0.2),
-        margin=dict(l=50, r=50, t=50, b=100)
-    )
-
-    # Save plots
-    html_file_path = os.path.join(output_dir_html, "연도별_VIP_유저.html")
-    png_file = os.path.join(output_dir_png, "연도별_VIP_유저.png")
-    save_plotly_fig(fig, html_file_path, png_file)
+    # Save overall percentage data to Excel
+    percent_df_total = pd.DataFrame(percent_data_total)
+    overall_percent_output_path = os.path.join(output_dir_xlsx, "연도별_VIP_유저.xlsx")
+    percent_df_total.to_excel(overall_percent_output_path, index=False)
+    print(f"연도별 VIP 유저 데이터 Excel 파일 저장 완료: {overall_percent_output_path}")
 
 # ----------------------------
 # Area-wise Analysis
 # ----------------------------
 
-def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir, output_dir_html, output_dir_png):
+
+def save_map_as_png(html_file_path, png_file_path):
+    """
+    Save a Folium map (HTML) as a PNG file using Selenium.
+    """
+    # Setup Chrome WebDriver with headless option
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--window-size=1200x900")
+
+    # Initialize WebDriver
+    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+
+    try:
+        driver.get(f"file://{os.path.abspath(html_file_path)}")
+        time.sleep(2)  # Wait for the map to fully render
+
+        # Take a screenshot of the map
+        driver.save_screenshot(png_file_path)
+        print(f"PNG saved at '{png_file_path}'")
+    finally:
+        driver.quit()
+
+def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir_xlsx, output_dir_html, output_dir_png):
     """
     Perform area-wise sales analysis and generate corresponding bubble maps.
     """
@@ -698,7 +730,6 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
 
     # Load GeoJSON and map coordinates
     geo = load_geojson(geo_file_path)
-
     region_coordinates = map_region_coordinates(geo)
 
     # Prepare data
@@ -721,7 +752,7 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
             supply_value = row['공급가액']
             if region_code in region_coordinates:
                 lat, lon = region_coordinates[region_code]
-                bubble_size = supply_value / 5e5
+                bubble_size = supply_value / 1e6
                 folium.CircleMarker(
                     location=[lat, lon],
                     radius=bubble_size,
@@ -733,12 +764,12 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
                 ).add_to(map_year)
 
         html_file_path = os.path.join(year_dir_html, f'{year}_지역별_판매량.html')
+        png_file_path = os.path.join(year_dir_png, f'{year}_지역별_판매량.png')
         map_year.save(html_file_path)
         print(f"'{html_file_path}'에 저장 완료")
 
-        # Folium maps are HTML-based and do not support direct PNG exports.
-        # To capture PNG, consider using tools like Selenium or headless browsers.
-        # Here, we'll skip saving PNG for individual years.
+        # Save as PNG
+        save_map_as_png(html_file_path, png_file_path)
 
     # Generate Combined Bubble Chart
     user_supply_sum_total = merged_user_area.groupby(['지역코드'])['공급가액'].sum().reset_index()
@@ -761,109 +792,16 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
             ).add_to(combined_map)
 
     html_file_path = os.path.join(output_dir_html, "연도별_지역별_판매량.html")
+    png_file_path = os.path.join(output_dir_png, "연도별_지역별_판매량.png")
     combined_map.save(html_file_path)
     print(f"'{html_file_path}'에 저장 완료")
 
-    # Note: Saving Folium maps as PNG requires additional steps not covered here.
+    # Save as PNG
+    save_map_as_png(html_file_path, png_file_path)
 
 # ----------------------------
 # Main Processing Function
 # ----------------------------
-
-def dynamic_analysis(df):
-    results = []
-    for i in range(len(df)):
-        year = int(df.loc[i, "년도"])  # '년도'를 int 타입으로 변환
-        sales = df.loc[i, "매출"]
-        cost = df.loc[i, "판관비"]
-        profit = df.loc[i, "당기순이익"]
-
-        # 매출 분석
-        if i > 0:
-            prev_sales = df.loc[i - 1, "매출"]
-            sales_change = sales - prev_sales
-            sales_change_pct = (sales_change / prev_sales) * 100
-            sales_text = f"{year}년 매출은 약 {sales:.2f}억 원으로, "
-            if sales_change > 0:
-                sales_text += f"전년 대비 {sales_change:.2f}억 원(+{sales_change_pct:.1f}%) 증가하며 성장세를 보였습니다."
-            elif sales_change < 0:
-                sales_text += f"전년 대비 {abs(sales_change):.2f}억 원(-{abs(sales_change_pct):.1f}%) 감소하며 하락세를 보였습니다."
-            else:
-                sales_text += "전년과 동일한 수준을 유지했습니다."
-        else:
-            sales_text = f"{year}년 매출은 약 {sales:.2f}억 원으로, 기준점이 되는 데이터입니다."
-
-        # 판관비 분석
-        if i > 0:
-            prev_cost = df.loc[i - 1, "판관비"]
-            cost_change = cost - prev_cost
-            cost_change_pct = (cost_change / prev_cost) * 100
-            cost_text = f"판관비는 약 {cost:.2f}억 원으로, "
-            if cost_change > 0:
-                cost_text += f"전년 대비 {cost_change:.2f}억 원(+{cost_change_pct:.1f}%) 증가했습니다."
-            elif cost_change < 0:
-                cost_text += f"전년 대비 {abs(cost_change):.2f}억 원(-{abs(cost_change_pct):.1f}%) 감소하며 효율성이 개선되었습니다."
-            else:
-                cost_text += "전년과 동일한 수준을 유지했습니다."
-        else:
-            cost_text = f"판관비는 약 {cost:.2f}억 원으로, 기준점이 되는 데이터입니다."
-
-        # 당기순이익 분석
-        if i > 0:
-            prev_profit = df.loc[i - 1, "당기순이익"]
-            profit_change = profit - prev_profit
-            profit_change_pct = (profit_change / prev_profit) * 100 if prev_profit != 0 else float("inf")
-            profit_text = f"당기순이익은 약 {profit:.2f}억 원으로, "
-            if profit_change > 0:
-                profit_text += f"전년 대비 {profit_change:.2f}억 원(+{profit_change_pct:.1f}%) 증가했습니다."
-            elif profit_change < 0:
-                profit_text += f"전년 대비 {abs(profit_change):.2f}억 원(-{abs(profit_change_pct):.1f}%) 감소했습니다."
-            else:
-                profit_text += "전년과 동일한 수준을 유지했습니다."
-        else:
-            profit_text = f"당기순이익은 약 {profit:.2f}억 원으로, 기준점이 되는 데이터입니다."
-
-        # 분석 결과 합치기
-        result = f"### {year}년 분석\n1. {sales_text}\n2. {cost_text}\n3. {profit_text}\n"
-        results.append(result)
-
-    return results
-
-    year_data = gender_sales_data[gender_sales_data['년도'] == year]
-    total_sales = year_data['공급가액'].sum()
-
-    results = [f"### {year}년 성별 매출 비중"]
-    for _, row in year_data.iterrows():
-        percentage = (row['공급가액'] / total_sales) * 100
-        gender = "남성" if row['성별'] == '남' else "여성"
-        results.append(f"- {gender}: 약 {row['공급가액'] / 1e8:.2f}억 원 ({percentage:.1f}%)")
-
-    return "\n".join(results)
-
-def analyze_category_sales(data):
-
-    results = []
-    years = sorted(data['년도'].unique())
-
-    for year in years:
-        year_data = data[data['년도'] == year]
-        total_sales = year_data['공급가액'].sum()
-
-        results.append(f"### {year}년 카테고리별 공급가액 분석")
-        if total_sales == 0:
-            results.append(f"- 데이터가 없어 분석할 수 없습니다.")
-            continue
-
-        for _, row in year_data.iterrows():
-            category = row['카테고리']
-            sales = row['공급가액']
-            percentage = (sales / total_sales) * 100
-            results.append(f"- {category}: 약 {sales / 1e8:.2f}억 원 ({percentage:.1f}%)")
-
-        results.append("\n")  # Add a newline for better readability
-
-    return "\n".join(results)
-
 def process_all_analysis():
     """
     Main function to orchestrate all analysis tasks.
@@ -871,17 +809,22 @@ def process_all_analysis():
     try:
         # Define paths
         input_file = './merged/merged_data.xlsx'
-        output_dir = "./analysis"
-        output_dir_html = "./analysis_html"
-        output_dir_png = "./analysis_png"
         geo_file_path = './유저/SIG.geojson'
+        region_file_path = './유저/region_data.json'
+        output_paths = create_output_paths()
+        output_dir = output_paths["output_dir"]
+        output_dir_xlsx = output_paths["output_dir_xlsx"]
+        output_dir_html = output_paths["output_dir_html"]
+        output_dir_png = output_paths["output_dir_png"]
 
-        region_file_path = os.path.join("유저", "region_data.json")
+        # Validate paths
+        for path in [input_file, geo_file_path, region_file_path]:
+            if not os.path.exists(path):
+                raise FileNotFoundError(f"Required file not found: {path}")
+
+        # Load region data
         with open(region_file_path, "r", encoding="utf-8") as f:
             region_data = json.load(f)
-
-        # Create necessary directories
-        create_directories(output_dir, output_dir_html, output_dir_png)
 
         # Retrieve data from Oracle
         oracle_data, oracle_item = retrieve_oracle_data()
@@ -895,34 +838,28 @@ def process_all_analysis():
         net_profit, data_net_profit = calculate_net_profit(sales_by_year, cost_by_year)
 
         # Save financial metrics
-        save_financial_metrics(data_net_profit, output_dir)
+        save_financial_metrics(data_net_profit, output_dir_xlsx)
 
-        # Generate financial data plots
+        # Plot financial data
         plot_financial_data(net_profit, output_dir_html, output_dir_png)
 
-        # Dynamic Analysis
-        print("[DEBUG] Starting dynamic analysis...")
-        dynamic_results = dynamic_analysis(data_net_profit)
-        print("[DEBUG] Dynamic analysis completed.")
-
-        # Save dynamic analysis results
-        dynamic_output_path = os.path.join(output_dir, "dynamic_analysis.json")
-        with open(dynamic_output_path, "w", encoding="utf-8") as f:
-            json.dump(dynamic_results, f, ensure_ascii=False, indent=4)
-        print(f"Dynamic analysis results saved: {dynamic_output_path}")
-
         # Category-wise Analysis
-        analyze_category(net_profit, sales_data, oracle_item, output_dir, output_dir_html, output_dir_png)
+        analyze_category(net_profit, sales_data, oracle_item, output_dir_xlsx, output_dir_html, output_dir_png)
+
+        # Age-group-wise Analysis
+        analyze_age_group(net_profit, merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
+
+        # Gender-wise Analysis
+        analyze_gender(net_profit, merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
 
         # VIP Users Analysis
-        analyze_vip_users(merged_data, oracle_data, output_dir, output_dir_html, output_dir_png)
+        analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
 
         # Area-wise Analysis
-        analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir, output_dir_html, output_dir_png)
+        analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir_xlsx, output_dir_html, output_dir_png)
 
+        logging.info("모든 분석 작업이 완료되었습니다.")
         return True, "모든 분석 작업이 완료되었습니다."
-
     except Exception as e:
-        # 예외 처리
-        print(f"Error in process_all_analysis: {str(e)}")
+        logging.error(f"Error in process_all_analysis: {str(e)}")
         return False, str(e)

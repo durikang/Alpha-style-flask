@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app, send_file
+from flask import Blueprint, request, jsonify, send_file
 from .services import handle_file_upload
 from .insert_service import process_and_insert_data  # DB 삽입 로직이 있는 모듈
 from .analysis_services import process_all_analysis
@@ -8,10 +8,8 @@ import zipfile
 import io  # io 모듈을 import
 import json
 
-
 # 블루프린트 생성
 main_bp = Blueprint('main', __name__)
-
 
 @main_bp.route('/upload', methods=['POST'])
 def upload_files():
@@ -31,13 +29,10 @@ def upload_files():
         print("Error in /upload:", str(e))  # 예외 디버깅
         return jsonify({'error': str(e)}), 500
 
-
 @main_bp.route('/insert', methods=['POST'])
 def insert_data():
     try:
         # 병합된 파일 경로
-        merged_file_path = '../merged/merged_data.xlsx'
-        # 병합된 파일 경로를 절대 경로로 설정
         merged_file_path = os.path.join('merged', 'merged_data.xlsx')
 
         # DB 삽입 로직 호출
@@ -52,7 +47,6 @@ def insert_data():
     except Exception as e:
         print("Error in /insert:", str(e))
         return jsonify({'error': str(e)}), 500
-
 
 @main_bp.route('/analysis', methods=['POST'])
 def create_graph():
@@ -80,21 +74,21 @@ def graph_view():
         # HTML 파일 경로 리스트
         if year == "all":
             file_paths = [
-                './analysis_html/연도별_재무상태표.html',
-                './analysis_html/연도별_카테고리별_판매량.html',
-                './analysis_html/연도별_나이대별_매출.html',
-                './analysis_html/연도별_성별_매출.html',
-                './analysis_html/연도별_VIP_유저.html',
-                './analysis_html/연도별_지역별_판매량.html'
+                './analysis/html/연도별_재무상태표.html',
+                './analysis/html/연도별_카테고리별_판매량.html',
+                './analysis/html/연도별_나이대별_매출.html',
+                './analysis/html/연도별_성별_매출.html',
+                './analysis/html/연도별_VIP_유저.html',
+                './analysis/html/연도별_지역별_판매량.html'
             ]
         else:
             file_paths = [
-                f'./analysis_html/{year}/{year}_재무상태표.html',
-                f'./analysis_html/{year}/{year}_카테고리별_판매량.html',
-                f'./analysis_html/{year}/{year}_나이대별_매출.html',
-                f'./analysis_html/{year}/{year}_성별_매출.html',
-                f'./analysis_html/{year}/{year}_VIP_유저.html',
-                f'./analysis_html/{year}/{year}_지역별_판매량.html'
+                f'./analysis/html/{year}/{year}_재무상태표.html',
+                f'./analysis/html/{year}/{year}_카테고리별_판매량.html',
+                f'./analysis/html/{year}/{year}_나이대별_매출.html',
+                f'./analysis/html/{year}/{year}_성별_매출.html',
+                f'./analysis/html/{year}/{year}_VIP_유저.html',
+                f'./analysis/html/{year}/{year}_지역별_판매량.html'
             ]
 
         print(f"[DEBUG] File paths: {file_paths}")
@@ -121,46 +115,27 @@ def graph_view():
         print(f"[EXCEPTION] Exception occurred: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-
-
-
 @main_bp.route('/table-data', methods=['POST'])
 def get_table_data():
     try:
         # 요청에서 연도 가져오기
         data = request.json
-        year = data.get('year')
+        year = data.get('year') or 'all'
 
-        # 엑셀 데이터 로드
-        excel_data = load_excel_data()
+        # Excel 데이터를 로드하여 JSON 생성
+        excel_data = generate_json_from_excel(year)
         if not excel_data:
             return jsonify({'error': 'Failed to load data'}), 500
 
-        # 연도별 데이터 필터링
-        filtered_data = {
-            "cost": [row for row in excel_data['cost'] if str(row['년도']) == year] if year != 'all' else excel_data['cost'],
-            "net_profit": [row for row in excel_data['net_profit'] if str(row['년도']) == year] if year != 'all' else excel_data['net_profit'],
-            "sale": [row for row in excel_data['sale'] if str(row['년도']) == year] if year != 'all' else excel_data['sale'],
-            "category_sales": [row for row in excel_data['category_sales'] if str(row['년도']) == year] if year != 'all' else excel_data['category_sales'],
+        response_data = {
+            "summary": excel_data.get("summary", []),
+            "category_sales": excel_data.get("category_sales", []),
+            "gender_sales": excel_data.get("gender_sales", []),
+            "age_group_sales": excel_data.get("age_group_sales", []),
+            "vip_sales": excel_data.get("vip_sales", []),
         }
 
-        # Dynamic Analysis 결과 로드
-        dynamic_output_path = "./analysis/dynamic_analysis.json"
-        if os.path.exists(dynamic_output_path):
-            with open(dynamic_output_path, 'r', encoding='utf-8') as f:
-                dynamic_analysis_results = json.load(f)
-        else:
-            dynamic_analysis_results = []
-
-        # 연도 필터 적용 (연도가 "all"인 경우 전체 반환)
-        filtered_dynamic_analysis = [
-            result for result in dynamic_analysis_results if f"{year}년" in result
-        ] if year != "all" else dynamic_analysis_results
-
-        # Dynamic Analysis 결과 추가
-        filtered_data['dynamic_analysis'] = filtered_dynamic_analysis
-
-        return jsonify(filtered_data), 200
+        return jsonify(response_data), 200
 
     except Exception as e:
         print(f"[ERROR] Exception in /table-data: {str(e)}")
@@ -176,29 +151,29 @@ def download_files():
         # PNG 파일 경로 리스트 생성
         if year == "all":
             png_paths = [
-                './analysis_png/연도별_재무상태표.png',
-                './analysis_png/연도별_카테고리별_판매량.png',
-                './analysis_png/연도별_나이대별_매출.png',
-                './analysis_png/연도별_성별_매출.png',
-                './analysis_png/전체_판매량_VIP.png',
-                './analysis_png/연도별_지역별_판매량.png',
-                './analysis/cost.xlsx',
-                './analysis/net_profit.xlsx',
-                './analysis/sale.xlsx',
-                './analysis/나이대별_판매량.xlsx',
-                './analysis/성별별_판매량.xlsx',
-                './analysis/연도별_카테고리별_판매량.xlsx'
+                './analysis/png/연도별_재무상태표.png',
+                './analysis/png/연도별_카테고리별_판매량.png',
+                './analysis/png/연도별_나이대별_매출.png',
+                './analysis/png/연도별_성별_매출.png',
+                './analysis/png/전체_판매량_VIP.png',
+                './analysis/png/연도별_지역별_판매량.png',
+                './analysis/xlsx/cost.xlsx',
+                './analysis/xlsx/net_profit.xlsx',
+                './analysis/xlsx/sale.xlsx',
+                './analysis/xlsx/나이대별_판매량.xlsx',
+                './analysis/xlsx/성별별_판매량.xlsx',
+                './analysis/xlsx/연도별_카테고리별_판매량.xlsx'
             ]
         else:
             png_paths = [
-                f'./analysis_png/{year}/{year}_재무상태표.png',
-                f'./analysis_png/{year}/{year}_카테고리별_판매량.png',
-                f'./analysis_png/{year}/{year}_나이대별_매출.png',
-                f'./analysis_png/{year}/{year}_성별_매출.png',
-                f'./analysis_png/{year}/{year}_VIP_유저.png',
-                f'./analysis_png/{year}/{year}_지역별_판매량.png',
-                f'./analysis/{year}_VIP_유저.xlsx',
-                f'./analysis/{year}_카테고리별_판매량.xlsx'
+                f'./analysis/png/{year}/{year}_재무상태표.png',
+                f'./analysis/png/{year}/{year}_카테고리별_판매량.png',
+                f'./analysis/png/{year}/{year}_나이대별_매출.png',
+                f'./analysis/png/{year}/{year}_성별_매출.png',
+                f'./analysis/png/{year}/{year}_VIP_유저.png',
+                f'./analysis/png/{year}/{year}_지역별_판매량.png',
+                f'./analysis/xlsx/{year}_VIP_유저.xlsx',
+                f'./analysis/xlsx/{year}_카테고리별_판매량.xlsx'
             ]
 
         # ZIP 파일 생성
