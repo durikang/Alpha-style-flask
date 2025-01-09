@@ -133,6 +133,7 @@ def get_table_data():
             "gender_sales": excel_data.get("gender_sales", []),
             "age_group_sales": excel_data.get("age_group_sales", []),
             "vip_sales": excel_data.get("vip_sales", []),
+            "area_sales": excel_data.get("area_sales", []),
         }
 
         return jsonify(response_data), 200
@@ -140,7 +141,7 @@ def get_table_data():
     except Exception as e:
         print(f"[ERROR] Exception in /table-data: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
+'''
 @main_bp.route('/download', methods=['POST'])
 def download_files():
     try:
@@ -163,6 +164,9 @@ def download_files():
                 './analysis/xlsx/나이대별_판매량.xlsx',
                 './analysis/xlsx/성별별_판매량.xlsx',
                 './analysis/xlsx/연도별_카테고리별_판매량.xlsx'
+                './analysis/xlsx/연도별_VIP_유저.xlsx'
+                './analysis/xlsx/연도별_지역별_판매량.xlsx'
+
             ]
         else:
             png_paths = [
@@ -172,8 +176,11 @@ def download_files():
                 f'./analysis/png/{year}/{year}_성별_매출.png',
                 f'./analysis/png/{year}/{year}_VIP_유저.png',
                 f'./analysis/png/{year}/{year}_지역별_판매량.png',
-                f'./analysis/xlsx/{year}_VIP_유저.xlsx',
-                f'./analysis/xlsx/{year}_카테고리별_판매량.xlsx'
+                f'./analysis/xlsx/{year}/{year}_VIP_유저.xlsx'
+                f'./analysis/xlsx/{year}/{year}_나이대별_판매량.xlsx'
+                f'./analysis/xlsx/{year}/{year}_성별_매출.xlsx'
+                f'./analysis/xlsx/{year}/{year}_지역별_판매량.xlsx'
+                f'./analysis/xlsx/{year}/{year}_카테고리별_판매량.xlsx'
             ]
 
         # ZIP 파일 생성
@@ -193,6 +200,101 @@ def download_files():
             mimetype='application/zip',
             as_attachment=True,
             download_name=f"{year}_files.zip"
+        )
+    except Exception as e:
+        print(f"[EXCEPTION] Exception occurred: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+'''
+@main_bp.route('/download', methods=['POST'])
+def download_files():
+    try:
+        # POST 요청에서 year 값 가져오기
+        year = request.form.get('year', 'all')
+        print(f"[DEBUG] 전달된 'year' 값: {year}")
+
+        # 고정 파일 경로
+        fixed_paths = [
+            './analysis/png/연도별_재무상태표.png',
+            './analysis/png/연도별_카테고리별_판매량.png',
+            './analysis/png/연도별_나이대별_매출.png',
+            './analysis/png/연도별_성별_매출.png',
+            './analysis/png/전체_판매량_VIP.png',
+            './analysis/png/연도별_지역별_판매량.png',
+            './analysis/xlsx/cost.xlsx',
+            './analysis/xlsx/net_profit.xlsx',
+            './analysis/xlsx/sale.xlsx',
+            './analysis/xlsx/나이대별_판매량.xlsx',
+            './analysis/xlsx/성별별_판매량.xlsx',
+            './analysis/xlsx/연도별_카테고리별_판매량.xlsx',
+            './analysis/xlsx/연도별_VIP_유저.xlsx',
+            './analysis/xlsx/연도별_지역별_판매량.xlsx',
+        ]
+
+        # 연도별 파일 경로 리스트
+        file_paths = {}
+        for y in range(2020, 2025):
+            file_paths[y] = [
+                f'./analysis/png/{y}/{y}_재무상태표.png',
+                f'./analysis/png/{y}/{y}_카테고리별_판매량.png',
+                f'./analysis/png/{y}/{y}_나이대별_매출.png',
+                f'./analysis/png/{y}/{y}_성별_매출.png',
+                f'./analysis/png/{y}/{y}_VIP_유저.png',
+                f'./analysis/png/{y}/{y}_지역별_판매량.png',
+                f'./analysis/xlsx/{y}/{y}_VIP_유저.xlsx',
+                f'./analysis/xlsx/{y}/{y}_나이대별_판매량.xlsx',
+                f'./analysis/xlsx/{y}/{y}_성별_매출.xlsx',
+                f'./analysis/xlsx/{y}/{y}_지역별_판매량.xlsx',
+                f'./analysis/xlsx/{y}/{y}_카테고리별_판매량.xlsx',
+            ]
+
+        # ZIP 파일 생성 (메모리)
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # 고정 파일 PNG 번호 초기화
+            png_counter = 1
+
+            # 고정 파일 추가
+            for path in fixed_paths:
+                if os.path.exists(path):
+                    file_extension = os.path.splitext(path)[1].lower()
+                    if file_extension == ".png":
+                        # PNG 파일 이름을 순서대로 변경
+                        arcname = f"{png_counter}.png"
+                        png_counter += 1
+                    else:
+                        # 원래 파일 이름 유지
+                        arcname = os.path.basename(path)
+                    zip_file.write(path, arcname=arcname)
+                else:
+                    print(f"[WARNING] File not found: {path}")
+
+            # 연도별 파일 추가 (PNG 파일 이름을 순서대로 변경)
+            for year, paths in file_paths.items():
+                year_png_counter = 1  # 연도별 PNG 파일 번호 초기화
+                for path in paths:
+                    if os.path.exists(path):
+                        # 파일 확장자 확인
+                        file_extension = os.path.splitext(path)[1].lower()
+                        if file_extension == ".png":
+                            # PNG 파일 이름을 순서대로 변경
+                            arcname = f"{year}/{year_png_counter}.png"
+                            year_png_counter += 1
+                        else:
+                            # 원래 파일 이름 유지
+                            arcname = f"{year}/{os.path.basename(path)}"
+                        zip_file.write(path, arcname=arcname)
+                    else:
+                        print(f"[WARNING] File not found: {path}")
+
+        # 메모리 버퍼의 시작 위치로 이동
+        zip_buffer.seek(0)
+
+        # ZIP 파일 전송
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name="all_files.zip"
         )
     except Exception as e:
         print(f"[EXCEPTION] Exception occurred: {str(e)}")
