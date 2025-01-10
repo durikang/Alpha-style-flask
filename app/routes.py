@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify, send_file
 from .services import handle_file_upload
 from .insert_service import process_and_insert_data  # DB 삽입 로직이 있는 모듈
-from .analysis_services import process_all_analysis
+###from .analysis_services import process_all_analysis
 from .table_data import generate_json_from_excel
+from app.test import process_all_analysis
 import os  # os 모듈 가져오기
 import zipfile
 import io  # io 모듈을 import
 import json
+
 
 # 블루프린트 생성
 main_bp = Blueprint('main', __name__)
