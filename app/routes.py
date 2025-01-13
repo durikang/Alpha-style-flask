@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_file
+from flask import Blueprint, request, jsonify, send_file,Response
 from .services import handle_file_upload
 from .insert_service import process_and_insert_data  # DB 삽입 로직이 있는 모듈
 ###from .analysis_services import process_all_analysis
@@ -8,10 +8,16 @@ import os  # os 모듈 가져오기
 import zipfile
 import io  # io 모듈을 import
 import json
+import pandas as pd
 
+import time
+import threading
 
 # 블루프린트 생성
 main_bp = Blueprint('main', __name__)
+
+# 작업 진행 상태를 저장하는 전역 변수
+tasks_status = {"cancel": False}
 
 @main_bp.route('/upload', methods=['POST'])
 def upload_files():
@@ -31,24 +37,89 @@ def upload_files():
         print("Error in /upload:", str(e))  # 예외 디버깅
         return jsonify({'error': str(e)}), 500
 
-@main_bp.route('/insert', methods=['POST'])
+
+@main_bp.route('/insert', methods=['GET', 'POST'])
 def insert_data():
-    try:
-        # 병합된 파일 경로
-        merged_file_path = os.path.join('merged', 'merged_data.xlsx')
+    """데이터 삽입 작업 진행"""
+    if request.method == 'POST':
+        # POST 요청으로 데이터 삽입 시작
+        return jsonify({'message': '데이터 삽입 작업이 시작되었습니다.'}), 200
 
-        # DB 삽입 로직 호출
-        success, message = process_and_insert_data(merged_file_path, 'c##finalProject/1234@localhost:1521/xe')
-        if success:
-            return jsonify({'message': message}), 200
-        elif message == "No valid data to insert.":
-            return jsonify({'message': message}), 204
-        else:
-            return jsonify({'error': message}), 500
+    # GET 요청: 작업 진행 상황 스트리밍
+    tasks_status["cancel"] = False
 
-    except Exception as e:
-        print("Error in /insert:", str(e))
-        return jsonify({'error': str(e)}), 500
+    def generate_progress():
+        try:
+            print("[DEBUG] /insert 요청 수신")
+
+            # 병합된 파일 경로
+            merged_file_path = os.path.join('./merged', 'merged_data.xlsx')
+            db_connection_string = 'c##finalProject/1234@localhost:1521/xe'
+
+            yield f"data: {json.dumps({'progress': 5, 'message': '병합된 파일 읽는 중: {merged_file_path}'})}\n\n"
+
+            # 1. 파일 읽기
+            try:
+                data = pd.read_excel(merged_file_path)
+                yield f"data: {json.dumps({'progress': 15, 'message': f'병합된 파일에서 {len(data)}개 행을 읽었습니다.'})}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'progress': 0, 'message': f'데이터 읽기 실패: {str(e)}'})}\n\n"
+                return
+
+            # 2. 데이터 전처리
+            try:
+                yield f"data: {json.dumps({'progress': 20, 'message': '데이터 전처리 중...'})}\n\n"
+                # 필수 컬럼의 결측값 채우기
+                required_columns = ['유저번호', '년도', '월', '일', '공급가액']
+                data[required_columns] = data[required_columns].fillna(0)
+                yield f"data: {json.dumps({'progress': 30, 'message': '필수 컬럼의 결측값을 0으로 채웠습니다.'})}\n\n"
+
+                # 날짜 유효성 검증 및 변환
+                data['order_date'] = pd.to_datetime(
+                    data[['년도', '월', '일']].astype(int).astype(str).agg(''.join, axis=1),
+                    format='%Y%m%d',
+                    errors='coerce'
+                )
+                invalid_dates = data['order_date'].isnull().sum()
+                data = data.dropna(subset=['order_date'])
+                yield f"data: {json.dumps({'progress': 50, 'message': f'유효하지 않은 날짜 {invalid_dates}개 제거. 남은 데이터: {len(data)}개.'})}\n\n"
+            except Exception as e:
+                yield f"data: {json.dumps({'progress': 0, 'message': f'데이터 전처리 실패: {str(e)}'})}\n\n"
+                return
+
+            # 3. 데이터베이스 삽입
+            try:
+                yield f"data: {json.dumps({'progress': 60, 'message': 'Oracle DB 연결 중...'})}\n\n"
+                success, message = process_and_insert_data(merged_file_path, db_connection_string)
+                if success:
+                    yield f"data: {json.dumps({'progress': 90, 'message': '데이터베이스에 성공적으로 삽입되었습니다.'})}\n\n"
+                else:
+                    yield f"data: {json.dumps({'progress': 0, 'message': f'삽입 실패: {message}'})}\n\n"
+                    return
+            except Exception as e:
+                yield f"data: {json.dumps({'progress': 0, 'message': f'데이터베이스 삽입 중 오류 발생: {str(e)}'})}\n\n"
+                return
+
+            # 4. 완료
+            yield f"data: {json.dumps({'progress': 100, 'message': '작업이 성공적으로 완료되었습니다!'})}\n\n"
+
+        except GeneratorExit:
+            print("[DEBUG] 스트리밍 연결 종료")
+        except Exception as e:
+            print(f"[ERROR] /insert 작업 중 에러 발생: {e}")
+            yield f"data: {json.dumps({'progress': 0, 'message': f'오류 발생: {str(e)}'})}\n\n"
+
+    return Response(generate_progress(), content_type='text/event-stream')
+
+
+
+@main_bp.route('/cancel', methods=['POST'])
+def cancel_task():
+    """작업 취소"""
+    tasks_status["cancel"] = True
+    print("작업 취소 요청 처리 완료")  # 디버깅 로그 추가
+    return jsonify({'message': '작업이 취소되었습니다.'}), 200
+
 
 @main_bp.route('/analysis', methods=['POST'])
 def create_graph():

@@ -195,13 +195,22 @@ def process_and_insert_data(file_path, db_connection_string):
             else:
                 item_id = int(item_code)
 
+            # transactionType 값 설정 (NULL 방지)
+            transaction_type = int(row.get('매입매출구분(1-매출/2-매입)', 0))  # 기본값 0으로 설정
+
+            # transactionType 값 검증
+            if transaction_type not in [1, 2]:  # 유효한 값은 1(매출) 또는 2(매입)
+                print(f"유효하지 않은 transactionType: {transaction_type}. 기본값 0으로 설정.")
+                transaction_type = 0
+
             order_details.append((
                 order_detail_no,
                 order_no,
                 item_id,  # 실제 데이터 매핑 필요
                 float(row['수량']),
                 float(row['공급가액']),
-                float(row['부가세'])
+                float(row['부가세']),
+                transaction_type  # 매입/매출 구분
             ))
 
         # ORDER_DETAIL 삽입을 executemany로 최적화
@@ -209,8 +218,8 @@ def process_and_insert_data(file_path, db_connection_string):
         cursor.executemany("""
             INSERT INTO order_detail (
                 order_detail_no, order_no, item_id, quantity,
-                subtotal, vat
-            ) VALUES (:1, :2, :3, :4, :5, :6)
+                subtotal, vat, transaction_type
+            ) VALUES (:1, :2, :3, :4, :5, :6, :7)
         """, order_details)
 
         # 모든 삽입이 성공적으로 완료되면 커밋
