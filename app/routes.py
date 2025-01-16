@@ -9,6 +9,7 @@ import zipfile
 import io  # io 모듈을 import
 import json
 import pandas as pd
+from .createExcelService import generate_financial_excel  # 엑셀 생성 서비스
 
 import time
 import threading
@@ -372,3 +373,26 @@ def download_files():
     except Exception as e:
         print(f"[EXCEPTION] Exception occurred: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@main_bp.route('/financial/download', methods=['GET'])
+def download_financial_excel():
+    """
+    금융 기록 데이터를 엑셀로 다운로드
+    """
+    try:
+        # Oracle DB에서 데이터를 조회하여 엑셀 생성
+        excel_file = generate_financial_excel()
+
+        # 메모리 버퍼로 엑셀 파일 전송
+        return send_file(
+            excel_file,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='financial_records.xlsx'
+        )
+    except Exception as e:
+        print(f"[ERROR] Excel 파일 생성 중 오류 발생: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+
