@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_file,Response
+from flask import Blueprint, request, jsonify, send_file,Response, stream_with_context
 from .services import handle_file_upload
 from .insert_service import process_and_insert_data  # DB 삽입 로직이 있는 모듈
 ###from .analysis_services import process_all_analysis
@@ -9,7 +9,7 @@ import zipfile
 import io  # io 모듈을 import
 import json
 import pandas as pd
-from .createExcelService import generate_financial_excel  # 엑셀 생성 서비스
+from .createExcelService import generate_financial_excel_stream
 
 import time
 import threading
@@ -377,22 +377,34 @@ def download_files():
 @main_bp.route('/financial/download', methods=['GET'])
 def download_financial_excel():
     """
-    금융 기록 데이터를 엑셀로 다운로드
+    금융 기록 데이터를 엑셀로 다운로드 (실시간 진행 상황 제공)
     """
     try:
-        # Oracle DB에서 데이터를 조회하여 엑셀 생성
-        excel_file = generate_financial_excel()
+        start_date = request.args.get('startDate')
+        end_date = request.args.get('endDate')
+        transaction_type = request.args.get('transactionType')
 
-        # 메모리 버퍼로 엑셀 파일 전송
-        return send_file(
-            excel_file,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            as_attachment=True,
-            download_name='financial_records.xlsx'
-        )
+        def generate():
+            try:
+                total_chunks = 0
+                for chunk in generate_financial_excel_stream(start_date, end_date, transaction_type):
+                    total_chunks += 1
+                    yield chunk
+                    # 진행 상황 전송
+                    yield f"event:progress\ndata:{total_chunks * 10}%\n\n".encode('utf-8')
+                yield f"event:complete\ndata:Download complete.\n\n".encode('utf-8')
+            except Exception as e:
+                yield f"event:error\ndata:{str(e)}\n\n".encode('utf-8')
+
+        headers = {
+            'Content-Disposition': 'attachment; filename=financial_records.xlsx',
+            'Content-Type': 'application/octet-stream'
+        }
+
+        return Response(stream_with_context(generate()), headers=headers)
+
     except Exception as e:
-        print(f"[ERROR] Excel 파일 생성 중 오류 발생: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return Response(json.dumps({'error': str(e)}), status=500, mimetype='application/json')
 
 
 
