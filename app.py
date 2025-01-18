@@ -5,4 +5,5 @@ app = create_app()
 
 if __name__ == '__main__':
     # 애플리케이션 실행
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
+g
