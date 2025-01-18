@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, send_file,Response, stream_with_context
+from flask import Blueprint, request, jsonify, send_file,Response, stream_with_context,current_app
 from .services import handle_file_upload
 from .insert_service import process_and_insert_data  # DB 삽입 로직이 있는 모듈
 ###from .analysis_services import process_all_analysis
@@ -20,25 +20,114 @@ main_bp = Blueprint('main', __name__)
 # 작업 진행 상태를 저장하는 전역 변수
 tasks_status = {"cancel": False}
 
+# SSE 상태를 관리하기 위한 전역 변수
+sse_messages = []
+
+
 @main_bp.route('/upload', methods=['POST'])
 def upload_files():
     try:
+        UPLOAD_FOLDER = current_app.config['UPLOAD_FOLDER']
+        MERGED_FOLDER = current_app.config['MERGED_FOLDER']
+
         files = request.files.getlist('files')
         if not files:
-            return jsonify({'error': 'No files provided'}), 400
+            return jsonify({'status': 'error', 'message': '업로드할 파일이 없습니다.'}), 400
 
-        # 업로드된 파일 디버깅
-        print("Uploaded Files:", [file.filename for file in files])
+        # sse_messages, tasks_status 초기화
+        sse_messages.clear()
+        tasks_status["cancel"] = False
 
-        result = handle_file_upload(files)
-        print("Handle File Upload Result:", result)  # 디버깅용 출력
-        return jsonify(result), 200
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        os.makedirs(MERGED_FOLDER, exist_ok=True)
+
+        file_paths = []
+        for file in files:
+            file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+            file.save(file_path)
+            file_paths.append(file_path)
+
+        # 백그라운드 스레드로 병합
+        thread = threading.Thread(
+            target=background_merge,
+            args=(file_paths, MERGED_FOLDER)
+        )
+        thread.start()
+
+        # 한글 메시지로 반환
+        return jsonify({
+            'status': 'started',
+            'message': '파일 업로드가 완료되었습니다. 백그라운드에서 병합을 진행합니다...'
+        }), 200
 
     except Exception as e:
-        print("Error in /upload:", str(e))  # 예외 디버깅
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'status': 'error', 'message': f'오류 발생: {str(e)}'}), 500
 
 
+def background_merge(file_paths, merged_folder):
+    """
+    백그라운드 스레드: 직접 merged_folder 사용
+    """
+    try:
+        dataframes = []
+        total = len(file_paths)
+
+        for index, file_path in enumerate(file_paths, start=1):
+            if tasks_status["cancel"]:
+                sse_messages.append("업로드가 취소되었습니다.")
+                return
+
+            # 파일 로딩
+            if file_path.endswith('.csv'):
+                df = pd.read_csv(file_path)
+            elif file_path.endswith('.xlsx'):
+                df = pd.read_excel(file_path)
+            else:
+                sse_messages.append(f"지원되지 않는 파일 형식: {os.path.basename(file_path)}")
+                return
+
+            dataframes.append(df)
+            # SSE 메시지 → 한글로 표현
+            sse_messages.append(f"파일 {index}/{total} 업로드 완료: {os.path.basename(file_path)}")
+
+            time.sleep(1)  # 시연용 딜레이
+
+        if not dataframes:
+            sse_messages.append("병합할 유효한 파일이 없습니다.")
+            return
+
+        # 병합
+        sse_messages.append("데이터 병합 중...")
+        merged_df = pd.concat(dataframes, ignore_index=True)
+
+        output_file_path = os.path.join(merged_folder, 'merged_data.xlsx')
+        merged_df.to_excel(output_file_path, index=False)
+
+        sse_messages.append("파일 병합 완료.")
+
+    except Exception as e:
+        sse_messages.append(f"에러 발생: {str(e)}")
+
+
+
+@main_bp.route('/progress')
+def progress_stream():
+    """
+    SSE로 업로드/병합 진행 상황을 스트리밍 (한국어 메시지).
+    """
+    def generate():
+        last_index = 0
+        while True:
+            if last_index < len(sse_messages):
+                for message in sse_messages[last_index:]:
+                    yield f"data: {message}\n\n"
+                last_index = len(sse_messages)
+            time.sleep(1)
+
+    return Response(stream_with_context(generate()), mimetype="text/event-stream")
+
+
+# DB삽입 라우터
 @main_bp.route('/insert', methods=['GET', 'POST'])
 def insert_data():
     """데이터 삽입 작업 진행"""
@@ -113,26 +202,49 @@ def insert_data():
     return Response(generate_progress(), content_type='text/event-stream')
 
 
-
-@main_bp.route('/cancel', methods=['POST'])
-def cancel_task():
-    """작업 취소"""
-    tasks_status["cancel"] = True
-    print("작업 취소 요청 처리 완료")  # 디버깅 로그 추가
-    return jsonify({'message': '작업이 취소되었습니다.'}), 200
-
-
-@main_bp.route('/analysis', methods=['POST'])
+# 분서하기 라우터
+@main_bp.route('/analysis', methods=['GET', 'POST'])
 def create_graph():
-    try:
-        success, message = process_all_analysis()
-        if success:
-            return jsonify({"message": message}), 200
-        else:
-            return jsonify({"error": message}), 500
-    except Exception as e:
-        print("Error in /analysis:", str(e))
-        return jsonify({'error': str(e)}), 500
+    """
+    분석 작업 라우트:
+      - POST: "분석 작업이 시작되었습니다." JSON 응답
+      - GET : SSE로 진행률 스트리밍 (test.py 수정)
+    """
+    if request.method == 'POST':
+        return jsonify({"message": "분석 작업이 시작되었습니다."}), 200
+
+    # GET → SSE
+    tasks_status["cancel"] = False
+
+    def generate_analysis():
+        try:
+            print("[DEBUG] /analysis SSE 요청 수신")
+
+            # test.py 의 process_all_analysis 를 단계별로 호출/진행률 전송
+            # => process_all_analysis()가 한 번에 끝나므로, 중간 단계별로 yield 필요
+            # 아래는 예시로 "가짜" 단계별 yield를 삽입.
+            # 실제론 test.py 내부에 별도 함수를 두어 step마다 yield 하도록 재구성할 수도 있음.
+
+            yield sse_data({"progress": 10, "message": "분석 준비 중..."})
+            time.sleep(1)
+
+            success, message = process_all_analysis()
+            if success:
+                # 중간 단계들(20%, 50%, 70%...)을 더 넣으려면 test.py 내부를 수정해서
+                # process_all_analysis()가 step마다 콜백/yield 하도록 해야 함
+                yield sse_data({"progress": 100, "message": message})
+            else:
+                yield sse_data({"progress": 0, "message": f"분석 실패: {message}"})
+
+        except GeneratorExit:
+            print("[DEBUG] /analysis 스트리밍 연결 종료")
+        except Exception as e:
+            print(f"[ERROR] /analysis 작업 중 에러: {e}")
+            yield sse_data({"progress": 0, "message": f"오류 발생: {str(e)}"})
+
+    return Response(stream_with_context(generate_analysis()), content_type='text/event-stream')
+
+
 
 @main_bp.route('/graph', methods=['POST'])
 def graph_view():
@@ -406,5 +518,19 @@ def download_financial_excel():
     except Exception as e:
         return Response(json.dumps({'error': str(e)}), status=500, mimetype='application/json')
 
+@main_bp.route('/cancel', methods=['POST'])
+def cancel_task():
+    """
+    업로드 취소
+    """
+    tasks_status["cancel"] = True
+    sse_messages.append("사용자에 의해 업로드가 취소되었습니다.")
+    return jsonify({'message': '업로드가 취소되었습니다.'}), 200
 
 
+def sse_data(obj):
+    """
+    SSE 포맷으로 데이터를 한 번에 보내기 위한 헬퍼.
+    obj: dict{"progress":..., "message":...} 식
+    """
+    return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
