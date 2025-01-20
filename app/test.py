@@ -182,8 +182,8 @@ def plot_year_with_prediction(historical_year, historical_data, future_data, out
     os.makedirs(html_dir, exist_ok=True)
     os.makedirs(png_dir, exist_ok=True)
 
-    html_file = os.path.join(html_dir, f"{historical_year}_vs_{historical_year+1}_예측_그래프.html")
-    png_file = os.path.join(png_dir, f"{historical_year}_vs_{historical_year+1}_예측_그래프.png")
+    html_file = os.path.join(html_dir, f"{historical_year}_재무상태표.html")
+    png_file = os.path.join(png_dir, f"{historical_year}_재무상태표.png")
 
     save_plotly_fig(fig, html_file, png_file)
 
@@ -263,8 +263,8 @@ def plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_pn
         hovermode='x unified'
     )
 
-    html_file = os.path.join(output_dir_html, "전체_재무데이터_예측.html")
-    png_file = os.path.join(output_dir_png, "전체_재무데이터_예측.png")
+    html_file = os.path.join(output_dir_html, "연도별_재무상태표.html")
+    png_file = os.path.join(output_dir_png, "연도별_재무상태표.png")
     save_plotly_fig(fig, html_file, png_file)
 
 # ----------------------------
@@ -574,7 +574,7 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         print("'공급가액'과 '예측 공급가액'을 float으로 변환 완료.")
 
         # 10. 집계 데이터 Excel로 저장
-        age_output = os.path.join(output_dir_xlsx, "연령대별_판매량.xlsx")
+        age_output = os.path.join(output_dir_xlsx, "나이대별_판매량.xlsx")
         save_excel(year_age_spending, age_output)
         print(f"연령대별 매출 데이터 Excel 파일 저장 완료: {age_output}")
 
@@ -591,7 +591,7 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 print(f"Directories 생성 완료: {year_dir_html}, {year_dir_png}, {year_dir_xlsx}")
 
                 # Save to Excel (actual and predicted values)
-                year_excel_output = os.path.join(year_dir_xlsx, f"{year}_연령대별_판매량.xlsx")
+                year_excel_output = os.path.join(year_dir_xlsx, f"{year}_나이대별_판매량.xlsx")
                 current_year_data = year_age_spending[year_age_spending['년도'] == year]
                 save_excel(current_year_data, year_excel_output)
                 print(f"{year}년 연령대별 매출 데이터 Excel 파일 저장 완료: {year_excel_output}")
@@ -617,8 +617,8 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                         )
                     )
 
-                    html_file = os.path.join(year_dir_html, f"{year}_연령대별_매출.html")
-                    png_file = os.path.join(year_dir_png, f"{year}_연령대별_매출.png")
+                    html_file = os.path.join(year_dir_html, f"{year}_나이대별_매출.html")
+                    png_file = os.path.join(year_dir_png, f"{year}_나이대별_매출.png")
                     save_plotly_fig(fig, html_file, png_file)
                 except Exception as e:
                     print(f"그래프 생성 중 오류 발생: {e}")
@@ -680,8 +680,8 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             )
 
             # Save line chart
-            html_file = os.path.join(output_dir_html, "연도별_연령대별_매출.html")
-            png_file = os.path.join(output_dir_png, "연도별_연령대별_매출.png")
+            html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
+            png_file = os.path.join(output_dir_png, "연도별_나이대별_매출.png")
             save_plotly_fig(fig, html_file, png_file)
 
             # ----------------------------
@@ -724,8 +724,8 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             )
 
             # Save the combined line chart
-            html_file = os.path.join(output_dir_html, "연도별_연령대별_매출_예측.html")
-            png_file = os.path.join(output_dir_png, "연도별_연령대별_매출_예측.png")
+            html_file = os.path.join(output_dir_html, "연도별_나이대별_매출_예측.html")
+            png_file = os.path.join(output_dir_png, "연도별_나이대별_매출_예측.png")
             save_plotly_fig(fig, html_file, png_file)
 
         except Exception as e:
@@ -814,8 +814,8 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         )
 
         # Save line chart
-        html_file = os.path.join(output_dir_html, "연도별_연령대별_매출.html")
-        png_file = os.path.join(output_dir_png, "연도별_연령대별_매출.png")
+        html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
+        png_file = os.path.join(output_dir_png, "연도별_나이대별_매출.png")
         save_plotly_fig(fig, html_file, png_file)
 
         # ----------------------------
@@ -858,8 +858,8 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         )
 
         # Save the combined line chart
-        html_file = os.path.join(output_dir_html, "연도별_연령대별_매출_예측.html")
-        png_file = os.path.join(output_dir_png, "연도별_연령대별_매출_예측.png")
+        html_file = os.path.join(output_dir_html, "연도별_나이대별_매출_예측.html")
+        png_file = os.path.join(output_dir_png, "연도별_나이대별_매출_예측.png")
         save_plotly_fig(fig, html_file, png_file)
 
     except Exception as e:
@@ -1023,7 +1023,7 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             print(f"{year}년 데이터 확인:\n{combined}")
 
             # Save to Excel
-            excel_filename = f"{year}_카테고리별_판매량_예측.xlsx"  # 파일 이름에 '가로형' 추가
+            excel_filename = f"{year}_카테고리별_판매량.xlsx"  # 파일 이름에 '가로형' 추가
             excel_path = os.path.join(year_dir_xlsx, excel_filename)
             save_excel(combined, excel_path)
             print(f"{year}년 카테고리별 예측 Excel 파일 저장 완료: {excel_path}")
@@ -1058,8 +1058,8 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
                 )
 
                 # 그래프 저장
-                fig_year_html = os.path.join(year_dir_html, f"{year}_카테고리별_판매량_그래프.html")
-                fig_year_png = os.path.join(year_dir_png, f"{year}_카테고리별_판매량_그래프.png")
+                fig_year_html = os.path.join(year_dir_html, f"{year}_카테고리별_판매량.html")
+                fig_year_png = os.path.join(year_dir_png, f"{year}_카테고리별_판매량.png")
                 save_plotly_fig(fig_year, fig_year_html, fig_year_png)
                 print(f"{year}년 카테고리별 판매량 그래프 저장 완료: {fig_year_html}, {fig_year_png}")
 
@@ -1076,7 +1076,7 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
         print(f"합산된 카테고리별 데이터:\n{sum_cat}")
 
         # 합산 데이터를 '카테고리별_판매량_예측.xlsx' 파일로 저장
-        sum_excel_path = os.path.join(output_dir_xlsx, "카테고리별_판매량_예측.xlsx")
+        sum_excel_path = os.path.join(output_dir_xlsx, "연도별_카테고리별_판매량.xlsx")
         save_excel(sum_cat, sum_excel_path)
         print(f"카테고리별 전체 합산 데이터 Excel 파일 저장 완료: {sum_excel_path}")
 
@@ -1108,8 +1108,8 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
         )
 
         # 합산 그래프 저장
-        sum_html_path = os.path.join(output_dir_html, "카테고리별_판매량_예측_합산그래프.html")
-        sum_png_path = os.path.join(output_dir_png, "카테고리별_판매량_예측_합산그래프.png")
+        sum_html_path = os.path.join(output_dir_html, "연도별_카테고리별_판매량.html")
+        sum_png_path = os.path.join(output_dir_png, "연도별_카테고리별_판매량.png")
         save_plotly_fig(fig_sum, sum_html_path, sum_png_path)
         print(f"카테고리별 전체 합산 그래프 저장 완료: {sum_html_path}, {sum_png_path}")
 
@@ -1286,8 +1286,8 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 )
 
                 # 그래프 저장
-                html_path = os.path.join(year_dir_html, f"{year}_VIP_유저_예측_단일그래프.html")
-                png_path = os.path.join(year_dir_png, f"{year}_VIP_유저_예측_단일그래프.png")
+                html_path = os.path.join(year_dir_html, f"{year}_VIP_유저.html")
+                png_path = os.path.join(year_dir_png, f"{year}_VIP_유저.png")
                 save_plotly_fig(fig, html_path, png_path)
             except Exception as e:
                 print(f"그래프 생성 중 오류 발생: {e}")
@@ -1356,7 +1356,7 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 })
 
             df_excel_total = pd.DataFrame(excel_rows_total)
-            excel_path_total = os.path.join(output_dir_xlsx, "전체_VIP_유저.xlsx")
+            excel_path_total = os.path.join(output_dir_xlsx, "연도별_VIP_유저.xlsx")
             try:
                 df_excel_total.to_excel(excel_path_total, index=False)
                 print(f"전체(모든 연도 합산) VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path_total}")
@@ -1422,8 +1422,8 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 )
 
                 # 그래프 저장
-                html_path_tot = os.path.join(output_dir_html, "전체_VIP_유저_예측_단일그래프.html")
-                png_path_tot = os.path.join(output_dir_png, "전체_VIP_유저_예측_단일그래프.png")
+                html_path_tot = os.path.join(output_dir_html, "전체_판매량_VIP.html")
+                png_path_tot = os.path.join(output_dir_png, "전체_판매량_VIP.png")
                 save_plotly_fig(fig_tot, html_path_tot, png_path_tot)
             except Exception as e:
                 print(f"그래프 생성 중 오류 발생: {e}")
@@ -1962,7 +1962,7 @@ def process_all_analysis():
         plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_png)
 
         # 7) 재무데이터 저장
-        financial_output_path = os.path.join(output_dir_xlsx, "재무데이터_예측포함.xlsx")
+        financial_output_path = os.path.join(output_dir_xlsx, "연도별_재무지표.xlsx")
         save_excel(net_profit, financial_output_path)
         print(f"재무데이터 Excel 파일 저장 완료: {financial_output_path}")
 
