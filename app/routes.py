@@ -10,6 +10,7 @@ import io  # io 모듈을 import
 import json
 import pandas as pd
 from .createExcelService import generate_financial_excel_stream
+from .analysis_service import analyze_product_sales
 
 import time
 import threading
@@ -534,3 +535,47 @@ def sse_data(obj):
     obj: dict{"progress":..., "message":...} 식
     """
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
+
+
+@main_bp.route('/salesAnalysis', methods=['GET'])
+def sales_analysis():
+    """
+    GET 파라미터
+      - startDate (YYYY-MM-DD)
+      - endDate   (YYYY-MM-DD)
+      - chartType (pie, bar, line ...)
+    예: /salesAnalysis?startDate=2025-01-01&endDate=2025-01-31&chartType=bar
+
+    응답(JSON):
+      { "success": true/false,
+        "plotly_data": [...],    # Plotly 그래프의 data
+        "plotly_layout": {...}   # Plotly 그래프의 layout
+        "error": "에러메시지"    # 실패 시 에러 메시지
+      }
+    """
+    try:
+        start_date = request.args.get('startDate')
+        end_date = request.args.get('endDate')
+        chart_type = request.args.get('chartType', 'bar')  # 기본값 bar
+
+        if not start_date or not end_date:
+            return jsonify({"success": False, "error": "시작일/종료일이 누락되었습니다."}), 400
+
+        # DB 커넥션 문자열(예시)
+        db_connection_string = 'c##finalProject/1234@localhost:1521/xe'
+
+        success, result = analyze_product_sales(start_date, end_date, chart_type, db_connection_string)
+        if success:
+            return jsonify({
+                "success": True,
+                "plotly_data": result["data"],
+                "plotly_layout": result["layout"]
+            }), 200
+        else:
+            return jsonify({
+                "success": False,
+                "error": result["error"]
+            }), 500
+
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
