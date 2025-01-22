@@ -20,7 +20,7 @@ def generate_json_from_excel(year=None):
             {
                 "name": "summary",
                 "file": summary_files,
-                "required_columns": ['년도', '매출', '판관비', '당기순이익', '예측매출', '예측판관비', '예측당기순이익'],
+                "required_columns": ['매출', '판관비', '당기순이익', '예측매출', '예측판관비', '예측당기순이익'],
                 "group_col": '년도',
                 "sum_cols": ['매출', '판관비', '당기순이익', '예측매출', '예측판관비', '예측당기순이익'],
                 "total_row_template": {'년도': '전체'}
@@ -60,15 +60,19 @@ def generate_json_from_excel(year=None):
             {
                 "name": "area_sales",
                 "file": area_file,
-                "required_columns": ['지역', '실제공급가액', '예측공급가액'],
+                "required_columns": ['지역', '공급가액', '예측공급가액'],
                 "group_col": '지역',
-                "sum_cols": ['실제공급가액', '예측공급가액'],
+                "sum_cols": ['공급가액', '예측공급가액'],
                 "total_row_template": {'지역': '전체'}
             },
         ]
 
         # 열 이름 매핑: 섹션별로 실제공급가액을 나타내는 다른 열 이름을 매핑
         column_mappings = {
+            "area_sales": {
+                "공급가액": "공급가액",  # 엑셀의 열 이름을 JSON에 필요한 열 이름으로 매핑
+                "예측공급가액": "예측공급가액"
+            },
             "gender_sales": {
                 "공급가액": "실제공급가액"  # '공급가액'을 '실제공급가액'으로 매핑
             },
@@ -77,12 +81,10 @@ def generate_json_from_excel(year=None):
                 "예측공급가액(억)": "예측공급가액"
             },
             "age_group_sales": {
-                "공급가액": "실제공급가액"
+                "공급가액": "실제공급가액",
+                "예측공급가액" : "예측공급가액"
             },
-            "vip_sales": {  # 중복 제거
-                "실제공급가액(억)": "실제공급가액",
-                "예측공급가액(억)": "예측공급가액"
-            },
+
             # 'category_sales' 섹션은 이미 '실제공급가액'과 '예측공급가액'을 사용하므로 추가 매핑 필요 없음
         }
 
@@ -135,13 +137,11 @@ def generate_json_from_excel(year=None):
                         raise ValueError(f"{name} 섹션에서 그룹 열 '{group_col}'을(를) 찾을 수 없습니다.")
 
                     if year and year.lower() == "all":
-                        # "전체" 행 추가
                         total_sums = {}
-                        for col in sum_cols:
+                        for col in sum_cols:  # 숫자형 컬럼 합계 계산
                             if col in df.columns and pd.api.types.is_numeric_dtype(df[col]):
                                 total_sums[col] = df[col].sum()
                             else:
-                                # '예측공급가액'이 'N/A'인 경우 처리
                                 total_sums[col] = 'N/A'
                         total_row = {**total_row_template, **total_sums}
                         df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
