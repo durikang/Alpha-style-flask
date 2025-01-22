@@ -324,10 +324,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
             ] = pred_value
             print(f"년도 {y}에 대한 예측 완료: {pred_value}")
 
-    # ----------------------------
-    # **수정된 부분 끝** #
-    # ----------------------------
-
     # After predictions, ensure '공급가액' and '예측 공급가액' are float
     year_gender_spending['공급가액'] = year_gender_spending['공급가액'].astype(float).fillna(0)
     year_gender_spending['예측 공급가액'] = year_gender_spending['예측 공급가액'].astype(float).fillna(0)
@@ -347,6 +343,13 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         os.makedirs(year_dir_png, exist_ok=True)
         os.makedirs(year_dir_xlsx, exist_ok=True)  # Ensure Excel directory exists
         print(year_dir_html, year_dir_png, year_dir_xlsx)
+
+        # 현재 루프에서 year_data를 정의
+        year_data = year_gender_spending[year_gender_spending['년도'] == year]
+
+        if year_data.empty:
+            print(f"{year}년에 대한 데이터가 없습니다.")
+            continue  # 다음 연도로 이동
 
         # Save to Excel (actual and predicted values)
         year_excel_output = os.path.join(year_dir_xlsx, f"{year}_성별_매출.xlsx")
@@ -442,49 +445,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         png_file = os.path.join(output_dir_png, "연도별_성별_매출.png")
         save_plotly_fig(fig, html_file, png_file)
 
-        # ----------------------------
-        # Generate and Save Prediction Plots
-        # ----------------------------
-        # 예측 데이터만 별도로 시각화 (년도별 예측)
-        fig = go.Figure()
-        for gender in year_gender_spending['성별'].unique():
-            actual_col = f"공급가액_{gender}"
-            predicted_col = f"예측 공급가액_{gender}"
-            if actual_col in gender_actual_plot.columns and predicted_col in gender_predicted_plot.columns:
-                actual = gender_actual_plot[actual_col]
-                predicted = gender_predicted_plot[predicted_col]
-
-                # 실제 값
-                fig.add_trace(go.Scatter(
-                    x=gender_actual_plot.index.astype(int),
-                    y=actual,
-                    mode='lines+markers',
-                    name=f'{gender} 매출 (실제)',
-                    line=dict(color=colors.get(gender, 'black'))
-                ))
-
-                # 예측 값
-                fig.add_trace(go.Scatter(
-                    x=gender_predicted_plot.index.astype(int),
-                    y=predicted,
-                    mode='lines+markers',
-                    name=f'{gender} 매출 (예측)',
-                    line=dict(dash='dot', color=colors.get(gender, 'black')),
-                    marker=dict(symbol='diamond', size=8, color=colors.get(gender, 'black'))
-                ))
-
-        fig.update_layout(
-            title='연도별 성별 매출 (실제 + 예측)',
-            xaxis_title='년도',
-            yaxis_title='금액 (억 단위)',
-            font=dict(family="Arial, sans-serif", size=12),
-            legend=dict(orientation="h", y=-0.2),
-        )
-
-        # Save the combined line chart
-        html_file = os.path.join(output_dir_html, "연도별_성별_매출_예측.html")
-        png_file = os.path.join(output_dir_png, "연도별_성별_매출_예측.png")
-        save_plotly_fig(fig, html_file, png_file)
 
     except Exception as e:
         print(f"Gender 분석 중 오류 발생: {e}")
@@ -682,50 +642,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             # Save line chart
             html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
             png_file = os.path.join(output_dir_png, "연도별_나이대별_매출.png")
-            save_plotly_fig(fig, html_file, png_file)
-
-            # ----------------------------
-            # Generate and Save Prediction Plots
-            # ----------------------------
-            # 예측 데이터만 별도로 시각화 (년도별 예측)
-            fig = go.Figure()
-            for age_group in year_age_spending['나이대'].unique():
-                actual_col = f"공급가액_{age_group}"
-                predicted_col = f"예측 공급가액_{age_group}"
-                if actual_col in age_actual_plot.columns and predicted_col in age_predicted_plot.columns:
-                    actual = age_actual_plot[actual_col]
-                    predicted = age_predicted_plot[predicted_col]
-
-                    # 실제 값
-                    fig.add_trace(go.Scatter(
-                        x=age_actual_plot.index.astype(int),
-                        y=actual,
-                        mode='lines+markers',
-                        name=f'{age_group} 매출 (실제)',
-                        line=dict(color=colors.get(age_group, 'black'))
-                    ))
-
-                    # 예측 값
-                    fig.add_trace(go.Scatter(
-                        x=age_predicted_plot.index.astype(int),
-                        y=predicted,
-                        mode='lines+markers',
-                        name=f'{age_group} 매출 (예측)',
-                        line=dict(dash='dot', color=colors.get(age_group, 'black')),
-                        marker=dict(symbol='diamond', size=8, color=colors.get(age_group, 'black'))
-                    ))
-
-            fig.update_layout(
-                title='연도별 연령대별 매출 (실제 + 예측)',
-                xaxis_title='년도',
-                yaxis_title='금액 (억 단위)',
-                font=dict(family="Arial, sans-serif", size=12),
-                legend=dict(orientation="h", y=-0.2),
-            )
-
-            # Save the combined line chart
-            html_file = os.path.join(output_dir_html, "연도별_나이대별_매출_예측.html")
-            png_file = os.path.join(output_dir_png, "연도별_나이대별_매출_예측.png")
             save_plotly_fig(fig, html_file, png_file)
 
         except Exception as e:
@@ -1431,70 +1347,7 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             # ----------------------------
             # (B-4) 그래프: 전체 누적분포
             # ----------------------------
-            try:
-                # Plot actual and predicted
-                fig_tot_full = go.Figure()
 
-                # 파랑 영역
-                fig_tot_full.add_trace(go.Scatter(
-                    x=x_vals_total,
-                    y=actual_vals_total,
-                    fill='tozeroy',
-                    mode='none',
-                    fillcolor='blue',
-                    name='실제(모든연도)'
-                ))
-                # 노랑 영역
-                fig_tot_full.add_trace(go.Scatter(
-                    x=x_vals_total,
-                    y=predicted_vals_total,
-                    fill='tonexty',
-                    mode='none',
-                    fillcolor='yellow',
-                    name='예측(모든연도)'
-                ))
-
-                # 점선: 10%,20%,30% (빨강=실제, 오렌지=예측)
-                for p in percentages:
-                    cutoff_idx = int(np.ceil(len(user_spending_total) * p))
-                    if cutoff_idx <= 0:
-                        continue
-                    cutoff_x = cutoff_idx / len(user_spending_total)
-
-                    # 실제
-                    ya = actual_vals_total[cutoff_idx - 1]
-                    fig_tot_full.add_trace(go.Scatter(
-                        x=[cutoff_x, cutoff_x],
-                        y=[0, ya],
-                        mode='lines',
-                        line=dict(color='red', dash='dash'),
-                        name=f"{int(p*100)}% 경계(실제)"
-                    ))
-                    # 예측
-                    yp = predicted_vals_total[cutoff_idx - 1]
-                    fig_tot_full.add_trace(go.Scatter(
-                        x=[cutoff_x, cutoff_x],
-                        y=[0, yp],
-                        mode='lines',
-                        line=dict(color='orange', dash='dash'),
-                        name=f"{int(p*100)}% 경계(예측)"
-                    ))
-
-                fig_tot_full.update_layout(
-                    title="전체(모든 연도) VIP 유저 (실제 vs 예측) 누적분포",
-                    xaxis=dict(title="유저 비율", range=[0, 1]),
-                    yaxis=dict(title="누적 금액 (억)", range=[0, max(predicted_vals_total)*1.05]),
-                    font=dict(size=12),
-                    legend=dict(orientation="h", y=-0.2),
-                    margin=dict(l=50, r=50, t=50, b=100)
-                )
-
-                # 그래프 저장
-                html_path_tot_full = os.path.join(output_dir_html, "전체_VIP_유저_예측_단일그래프_full.html")
-                png_path_tot_full = os.path.join(output_dir_png, "전체_VIP_유저_예측_단일그래프_full.png")
-                save_plotly_fig(fig_tot_full, html_path_tot_full, png_path_tot_full)
-            except Exception as e:
-                print(f"그래프 생성 중 오류 발생: {e}")
         except Exception as e:
             print(f"VIP Users 분석 중 오류 발생: {e}")
     except Exception as e:
