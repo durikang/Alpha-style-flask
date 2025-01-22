@@ -16,6 +16,7 @@ import time
 import logging
 from selenium.webdriver.chrome.options import Options
 
+
 # ----------------------------
 # Utility Functions
 # ----------------------------
@@ -295,12 +296,10 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
     # ----------------------------
     # 각 년도별로 다음 년도의 예측값을 현재 년도의 '예측 공급가액'에 저장
     for gender in year_gender_spending['성별'].unique():
-        print(f"현재 처리 중인 성별: {gender}")
         gender_data = year_gender_spending[year_gender_spending['성별'] == gender].copy()
         gender_data.sort_values('년도', inplace=True)
         years = gender_data['년도'].unique()
         for y in years:
-            print(f"년도 {y}에 대한 예측 수행 중...")
             # 학습 데이터: 현재 년도까지
             train_df = gender_data[gender_data['년도'] <= y]
             if len(train_df) < 2:
@@ -322,7 +321,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
                 (year_gender_spending['년도'] == y) & (year_gender_spending['성별'] == gender),
                 '예측 공급가액'
             ] = pred_value
-            print(f"년도 {y}에 대한 예측 완료: {pred_value}")
 
     # After predictions, ensure '공급가액' and '예측 공급가액' are float
     year_gender_spending['공급가액'] = year_gender_spending['공급가액'].astype(float).fillna(0)
@@ -347,9 +345,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         # 현재 루프에서 year_data를 정의
         year_data = year_gender_spending[year_gender_spending['년도'] == year]
 
-        if year_data.empty:
-            print(f"{year}년에 대한 데이터가 없습니다.")
-            continue  # 다음 연도로 이동
 
         # Save to Excel (actual and predicted values)
         year_excel_output = os.path.join(year_dir_xlsx, f"{year}_성별_매출.xlsx")
@@ -460,29 +455,23 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
     try:
         # 1. 매출 데이터 필터링
         sales_administrative = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1].copy()
-        print("매출 데이터 필터링 완료.")
 
         # 2. 유저 정보와 병합
         merged_age = pd.merge(sales_administrative, oracle_data, on='유저번호', how='left')
-        print("유저 정보와 병합 완료.")
 
         # 3. '년도'를 숫자형으로 변환
         merged_age['년도'] = pd.to_numeric(merged_age['년도'], errors='coerce')
-        print("'년도'를 숫자형으로 변환 완료.")
 
         # 4. 나이대 정의
         bins = [10, 20, 30, 40, 50]
         labels = ['10대', '20대', '30대', '40대']
         merged_age['나이대'] = pd.cut(merged_age['나이'], bins=bins, labels=labels, right=False, include_lowest=True)
-        print("나이대 정의 완료.")
 
         # 5. 연도 및 나이대별 공급가액 집계
         year_age_spending = merged_age.groupby(['년도', '나이대'])['공급가액'].sum().reset_index()
-        print("연도 및 나이대별 집계 완료.")
 
         # 6. NaN '나이대' 제거
         year_age_spending = year_age_spending.dropna(subset=['나이대'])
-        print("NaN '나이대' 제거 완료.")
 
         # 7. '예측 공급가액' 초기화
         year_age_spending['예측 공급가액'] = np.nan
@@ -491,16 +480,12 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         for age_group in year_age_spending['나이대'].unique():
             try:
                 if pd.isna(age_group):
-                    print("NaN 나이대는 건너뜁니다.")
                     continue
-                print(f"현재 처리 중인 나이대: {age_group}")
                 age_data = year_age_spending[year_age_spending['나이대'] == age_group].copy()
                 age_data.sort_values('년도', inplace=True)
                 years = age_data['년도'].unique()
-                print(f"{age_group} 나이대에 대한 년도 목록: {years}")
                 for y in years:
                     try:
-                        print(f"년도 {y}에 대한 예측 수행 중...")
                         # 학습 데이터: 현재 년도까지
                         train_df = age_data[age_data['년도'] <= y]
                         if len(train_df) < 2:
@@ -522,7 +507,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                             (year_age_spending['년도'] == y) & (year_age_spending['나이대'] == age_group),
                             '예측 공급가액'
                         ] = pred_value
-                        print(f"년도 {y}에 대한 예측 완료: {pred_value}")
                     except Exception as inner_e:
                         print(f"년도 {y}에 대한 예측 중 오류 발생: {inner_e}")
             except Exception as outer_e:
@@ -531,7 +515,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         # 9. 데이터 타입 변환
         year_age_spending['공급가액'] = year_age_spending['공급가액'].astype(float).fillna(0)
         year_age_spending['예측 공급가액'] = year_age_spending['예측 공급가액'].astype(float).fillna(0)
-        print("'공급가액'과 '예측 공급가액'을 float으로 변환 완료.")
 
         # 10. 집계 데이터 Excel로 저장
         age_output = os.path.join(output_dir_xlsx, "나이대별_판매량.xlsx")
@@ -1137,8 +1120,10 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
 
             df_excel = pd.DataFrame(excel_rows)
             excel_path = os.path.join(year_dir_xlsx, f"{year}_VIP_유저.xlsx")
+            df_excel_copy_file = df_excel.copy()
+            df_excel_copy_file.insert(0, '년도', year)
             try:
-                df_excel.to_excel(excel_path, index=False)
+                df_excel_copy_file.to_excel(excel_path, index=False)
                 print(f"{year}년 VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path}")
             except Exception as e:
                 print(f"Excel 파일 저장 중 오류 발생: {e}")
@@ -1273,8 +1258,10 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
 
             df_excel_total = pd.DataFrame(excel_rows_total)
             excel_path_total = os.path.join(output_dir_xlsx, "연도별_VIP_유저.xlsx")
+            df_excel_total_copy_file = df_excel_total.copy()
+            df_excel_total_copy_file.insert(0, '년도', year)
             try:
-                df_excel_total.to_excel(excel_path_total, index=False)
+                df_excel_total_copy_file.to_excel(excel_path_total, index=False)
                 print(f"전체(모든 연도 합산) VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path_total}")
             except Exception as e:
                 print(f"Excel 파일 저장 중 오류 발생: {e}")
@@ -1338,8 +1325,8 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 )
 
                 # 그래프 저장
-                html_path_tot = os.path.join(output_dir_html, "전체_판매량_VIP.html")
-                png_path_tot = os.path.join(output_dir_png, "전체_판매량_VIP.png")
+                html_path_tot = os.path.join(output_dir_html, "연도별_VIP_유저.html")
+                png_path_tot = os.path.join(output_dir_png, "연도별_VIP_유저.png")
                 save_plotly_fig(fig_tot, html_path_tot, png_path_tot)
             except Exception as e:
                 print(f"그래프 생성 중 오류 발생: {e}")
@@ -1419,74 +1406,103 @@ def load_geojson(geo_file_path):
         print(f"GeoJSON 파일 로딩 중 오류 발생: {e}")
         return None
 
+
 def map_region_coordinates(geo):
     """
-    Map region codes to their centroid coordinates.
+    Map region codes to their first coordinate (or centroid).
+    기존 코드는 Polygon/MultiPolygon에 대해 centroid(중심점)를 계산했지만,
+    여기서는 "제일 앞에 있는 좌표값"을 가져오도록 수정.
     """
     region_coordinates = {}
     try:
-        for feature in geo['features']:
-            properties = feature['properties']
-            geometry = feature['geometry']
-            # '주소'에서 '지역'을 추출하는 로직 추가
-            # 예: '서울특별시 강남구 ...' 에서 '서울특별시' 추출
-            address = properties.get('address') or properties.get('주소')  # GeoJSON 구조에 따라 수정 필요
-            if not address:
-                continue
-            # 예시: 서울특별시, 부산광역시 등 주요 지역 이름 추출
-            # 이는 주소 형식에 따라 달라질 수 있습니다.
-            # 아래는 간단한 예시입니다.
-            region = address.split()[0]  # 첫 번째 단어를 지역으로 가정
+        for feature in geo.get('features', []):
+            properties = feature.get('properties', {})
+            geometry = feature.get('geometry', {})
 
-            # Calculate centroid
-            if geometry['type'] == 'Point':
-                coordinates = geometry['coordinates']
-                lat, lon = coordinates[1], coordinates[0]
-            elif geometry['type'] == 'Polygon':
-                # Calculate centroid of polygon
-                poly = geometry['coordinates'][0]
-                lat = np.mean([point[1] for point in poly])
-                lon = np.mean([point[0] for point in poly])
-            elif geometry['type'] == 'MultiPolygon':
-                # Calculate centroid of first polygon in MultiPolygon
-                poly = geometry['coordinates'][0][0]
-                lat = np.mean([point[1] for point in poly])
-                lon = np.mean([point[0] for point in poly])
-            else:
-                continue
-
-            # Assuming 'region_code' is unique per 'region'
-            region_code = properties.get('region_code') or properties.get('code') or properties.get('id')  # 실제 GeoJSON 구조에 따라 수정 필요
+            # 지역 코드 추출 (GeoJSON의 실제 필드명에 맞게 수정)
+            # [CHANGED] 예: 만약 SIG.geojson에서 'SIG_CD'라면 아래처럼 수정
+            # region_code = properties.get('SIG_CD')
+            # 일단 원본의 adm_cd / code / id를 그대로 두되, 필요 시 'SIG_CD'로 교체
+            region_code = (
+                properties.get('adm_cd')
+                or properties.get('code')
+                or properties.get('id')
+                or properties.get('SIG_CD')  # 필요한 필드명 추가
+            )
             if not region_code:
-                region_code = region  # 대체
+                # 지역 코드가 없을 경우 건너뜀
+                continue
+            region_code = str(region_code).zfill(5)  # 5자리로 패딩
 
-            region_coordinates[str(region_code)] = (lat, lon)
+            # 지역 이름 추출 (필요 시)
+            region_name = (
+                properties.get('adm_nm')
+                or properties.get('name')
+                or properties.get('address')
+                or properties.get('SIG_KOR_NM')  # 필요한 필드명 추가
+            )
+            if not region_name:
+                # 지역 이름이 없을 경우 건너뜀
+                continue
+
+            # [CHANGED] 좌표 계산 로직을 "제일 앞의 좌표"로 변경
+            geom_type = geometry.get('type')
+            coords = geometry.get('coordinates', [])
+
+            if geom_type == 'Point':
+                # 예: coordinates: [경도, 위도]
+                lon, lat = coords[0], coords[1]
+
+            elif geom_type == 'Polygon':
+                # 예: Polygon -> 2중 배열 구조 [[ [lon, lat], [lon, lat], ... ]]
+                # "제일 앞에 있는 좌표" = coords[0][0]
+                # 만약 centroid를 사용하려면 기존처럼 np.mean(...) 사용
+                if coords and coords[0]:
+                    first_coord = coords[0][0]
+                    lon, lat = first_coord[0], first_coord[1]
+                else:
+                    continue
+
+            elif geom_type == 'MultiPolygon':
+                # 예: MultiPolygon -> 3중 배열 구조 [[[ [lon, lat], ... ]], [ ... ]]
+                # "제일 앞에 있는 좌표" = coords[0][0][0]
+                if coords and coords[0] and coords[0][0]:
+                    first_coord = coords[0][0][0]
+                    lon, lat = first_coord[0], first_coord[1]
+                else:
+                    continue
+
+            else:
+                # 지원하지 않는 geometry 타입
+                continue
+
+            # 좌표 저장 (위도, 경도 순)
+            region_coordinates[region_code] = (lat, lon)
+
     except Exception as e:
         print(f"지역 좌표 매핑 중 오류 발생: {e}")
     return region_coordinates
 
-# ----------------------------
-# Additional Functions for Area Analysis
-# ----------------------------
+
 def save_map_as_png(html_file_path, png_file_path):
     """
     Save a Folium map (HTML) as a PNG file using Selenium.
     """
-    # Setup Chrome WebDriver with headless option
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--window-size=1200x900")
 
-    # Initialize WebDriver
-    driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=chrome_options)
+    driver = webdriver.Chrome(
+        service=ChromeService(ChromeDriverManager().install()),
+        options=chrome_options
+    )
 
     try:
         driver.get(f"file://{os.path.abspath(html_file_path)}")
         time.sleep(2)  # Wait for the map to fully render
 
-        # Take a screenshot of the map
         driver.save_screenshot(png_file_path)
         print(f"PNG saved at '{png_file_path}'")
     except Exception as e:
@@ -1497,102 +1513,99 @@ def save_map_as_png(html_file_path, png_file_path):
 # ----------------------------
 # Area Analysis Function
 # ----------------------------
-import logging
 
-
-import os
-import logging
-import pandas as pd
-import folium
-
-def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir_xlsx, output_dir_html,
-                 output_dir_png):
+def analyze_area(merged_data, oracle_data, geo_file_path, region_data,
+                 output_dir_xlsx, output_dir_html, output_dir_png):
     """
     Perform area-wise sales analysis, generate corresponding bubble maps, and save top 5 data to Excel files.
     Additionally, save matched and unmatched region codes to separate TXT files.
     """
-    # ----------------------------
-    # Logging Setup for analyze_area
-    # ----------------------------
     logger = logging.getLogger('analyze_area')
     logger.setLevel(logging.DEBUG)
 
-    # Prevent adding multiple handlers if the function is called multiple times
     if not logger.handlers:
-        # File handler for logging to a text file
         fh = logging.FileHandler('analyze_area_debug.txt', encoding='utf-8')
         fh.setLevel(logging.DEBUG)
-
-        # Formatter to include time, log level, and message
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         fh.setFormatter(formatter)
-
-        # Add handler to the logger
         logger.addHandler(fh)
 
     try:
-        # Initialize sets to collect matched and unmatched region codes
         matched_regions = set()
         unmatched_regions = set()
         logger.debug("Initialized matched_regions and unmatched_regions sets.")
 
-        # Map '지역' to '지역코드'
         logger.info("지역코드 매핑 시작.")
         oracle_data['지역코드'] = oracle_data['지역'].map(region_data)
-        oracle_data['지역코드'] = oracle_data['지역코드'].astype('Int64')  # Nullable Integer
+
+        logger.debug("지역코드 정수형으로 변환 시작.")
+        oracle_data['지역코드'] = oracle_data['지역코드'].dropna().astype(int).astype(str).str.zfill(5)
+        logger.debug(f"매핑된 지역코드:\n{oracle_data['지역코드'].unique()[:10]}")
+
+        oracle_data['지역코드'] = oracle_data['지역코드'].fillna('NaN')
         logger.info("지역코드 매핑 완료.")
 
-        # Filter sales data where '매입매출구분(1-매출/2-매입)' == 1
         logger.info("매출 데이터 필터링 및 병합 시작.")
         sales_data = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1].copy()
         merged_user_data = pd.merge(oracle_data, sales_data, on='유저번호')
         logger.info(f"매출 데이터 필터링 완료. 병합된 데이터 개수: {len(merged_user_data)}")
 
-        # Load GeoJSON and map coordinates
         logger.info("GeoJSON 파일 로드 시작.")
         geo = load_geojson(geo_file_path)
         if geo is None:
             logger.error("GeoJSON 파일 로드 실패.")
             return
+
+        # [CHANGED] 위에서 수정한 map_region_coordinates() 사용
         region_coordinates = map_region_coordinates(geo)
+        region_coordinates = {str(k).zfill(5): v for k, v in region_coordinates.items()}
         logger.info(f"지역 좌표 매핑 완료: {len(region_coordinates)} 지역.")
 
-        # Prepare aggregated data
         logger.info("유저별 지역 및 연도별 공급가액 집계 시작.")
         merged_user_area = merged_user_data[['지역코드', '년도', '공급가액', '유저번호']]
         user_supply_sum = merged_user_area.groupby(['지역코드', '년도'])['공급가액'].sum().reset_index()
         logger.debug(f"Aggregated user supply sum:\n{user_supply_sum.head()}")
 
-        # Initialize a dictionary to collect top 5 per year for combined Excel
         combined_top5_dict = {}
         logger.debug("Initialized combined_top5_dict.")
 
-        # Generate Bubble Charts and Excel files per Year
+        logger.info("지역코드 매칭 여부 확인 시작.")
+        unique_region_codes = oracle_data['지역코드'].unique()
+        for code in unique_region_codes:
+            if code in region_coordinates:
+                matched_regions.add(code)
+                logger.debug(f"매칭 성공: {code}")
+            else:
+                if code != 'NaN':
+                    unmatched_regions.add(code)
+                    logger.debug(f"매칭 실패: {code}")
+        logger.info("지역코드 매칭 여부 확인 완료.")
+
         for year in sorted(user_supply_sum['년도'].unique()):
             logger.info(f"년도별 분석 시작: {year}")
             year_data = user_supply_sum[user_supply_sum['년도'] == year]
             logger.debug(f"년도 {year}의 데이터 개수: {len(year_data)}")
 
-            # Create directories for HTML and PNG outputs
             year_dir_html = os.path.join(output_dir_html, str(year))
             year_dir_png = os.path.join(output_dir_png, str(year))
-            year_dir_xlsx = os.path.join(output_dir_xlsx, str(year))  # Directory for Excel
+            year_dir_xlsx = os.path.join(output_dir_xlsx, str(year))
+
             os.makedirs(year_dir_html, exist_ok=True)
             os.makedirs(year_dir_png, exist_ok=True)
-            os.makedirs(year_dir_xlsx, exist_ok=True)  # Ensure Excel directory exists
+            os.makedirs(year_dir_xlsx, exist_ok=True)
+
             logger.debug(f"생성된 디렉토리: {year_dir_html}, {year_dir_png}, {year_dir_xlsx}")
 
-            # Initialize Folium map
-            map_center = [35.96, 127.1]  # Center of South Korea
+            map_center = [35.96, 127.1]
             map_year = folium.Map(location=map_center, zoom_start=7, tiles='cartodbpositron')
             logger.debug("Folium 맵 초기화 완료.")
 
             for _, row in year_data.iterrows():
-                region_code = str(row['지역코드'])
+                region_code = str(row['지역코드']).zfill(5)
                 supply_value = row['공급가액']
                 if region_code in region_coordinates:
                     lat, lon = region_coordinates[region_code]
-                    bubble_size = supply_value / 1e6
+                    bubble_size = max(supply_value / 1e6, 1)
                     folium.CircleMarker(
                         location=[lat, lon],
                         radius=bubble_size,
@@ -1603,28 +1616,22 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
                         popup=f'지역 코드: {region_code}<br>공급가액: {supply_value:,.0f}원'
                     ).add_to(map_year)
                     logger.debug(f"지역 코드 {region_code}에 대한 CircleMarker 추가: 위치=({lat}, {lon}), 공급가액={supply_value}")
-                    matched_regions.add(region_code)  # Add to matched set
+                    matched_regions.add(region_code)
                 else:
                     logger.warning(f"지역 코드 {region_code}에 대한 좌표 정보가 없습니다.")
-                    unmatched_regions.add(region_code)  # Add to unmatched set
+                    unmatched_regions.add(region_code)
 
-            # Save map as HTML
             html_file_path = os.path.join(year_dir_html, f'{year}_지역별_판매량.html')
             map_year.save(html_file_path)
             logger.info(f"Folium 맵 HTML 저장 완료: {html_file_path}")
 
-            # Save map as PNG
             png_file_path = os.path.join(year_dir_png, f'{year}_지역별_판매량.png')
             save_map_as_png(html_file_path, png_file_path)
             logger.info(f"맵 PNG 저장 완료: {png_file_path}")
 
-            # ---- Add Excel Saving Functionality ----
-
-            # Get top 5 regions by '공급가액' for the year
             top5_year = year_data.sort_values(by='공급가액', ascending=False).head(5)
             logger.debug(f"년도 {year}의 상위 5개 지역:\n{top5_year}")
 
-            # Merge with original data to include detailed records
             detailed_top5 = pd.merge(
                 merged_user_area,
                 top5_year,
@@ -1633,7 +1640,6 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
             )
             logger.debug(f"상위 5개 지역에 대한 상세 데이터:\n{detailed_top5.head()}")
 
-            # Merge with 'oracle_data' to include '지역' names
             detailed_top5 = pd.merge(
                 detailed_top5,
                 oracle_data[['지역코드', '지역']].drop_duplicates(),
@@ -1642,47 +1648,40 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
             )
             logger.debug(f"'지역' 이름 포함 후 데이터:\n{detailed_top5.head()}")
 
-            # Extract the relevant columns for the top 5 areas
             top5_year_area = detailed_top5[['지역', '공급가액']].drop_duplicates()
-            # Corrected sort_values with 'ascending' and boolean False
             sum_by_area = top5_year_area.groupby('지역').sum().reset_index().sort_values(by='공급가액', ascending=False)
             logger.debug(f"지역별 공급가액 합산:\n{sum_by_area}")
 
             top5_year_area = sum_by_area.head(5)
             logger.debug(f"상위 5개 지역 최종 목록:\n{top5_year_area}")
 
-            # Define Excel file path
             excel_file_path = os.path.join(year_dir_xlsx, f'{year}_지역별_판매량.xlsx')
-
-            # Save to Excel
+            # '년도' 컬럼을 첫 번째 열로 삽입
+            top5_year_area_with_year = top5_year_area.copy()
+            top5_year_area_with_year.insert(0, '년도', year)
             try:
                 with pd.ExcelWriter(excel_file_path, engine='xlsxwriter') as writer:
-                    top5_year_area.to_excel(writer, sheet_name='상위5_집계', index=False)
+                    top5_year_area_with_year.to_excel(writer, sheet_name='상위5_집계', index=False)
                 logger.info(f"상위 5개 지역 Excel 저장 완료: {excel_file_path}")
             except Exception as e:
                 logger.error(f"년도 {year}의 Excel 저장 중 오류 발생: {e}", exc_info=True)
 
-            # Add to combined_top5_dict
             combined_top5_dict[year] = top5_year_area.copy()
-            combined_top5_dict[year]['년도'] = year  # Add year information
+            combined_top5_dict[year]['년도'] = year
             logger.debug(f"combined_top5_dict에 년도 {year}의 데이터 추가 완료.")
 
-        # ---- Generate Combined Bubble Chart and Excel ----
-
-        # Aggregate total supply by region
         user_supply_sum_total = merged_user_area.groupby(['지역코드'])['공급가액'].sum().reset_index()
         logger.info("전체 지역별 공급가액 집계 완료.")
 
-        # Initialize Folium map for combined data
         combined_map = folium.Map(location=[35.96, 127.1], zoom_start=7, tiles='cartodbpositron')
         logger.debug("전체 지역용 Folium 맵 초기화 완료.")
 
         for _, row in user_supply_sum_total.iterrows():
-            region_code = str(row['지역코드'])
+            region_code = str(row['지역코드']).zfill(5)
             supply_value = row['공급가액']
             if region_code in region_coordinates:
                 lat, lon = region_coordinates[region_code]
-                bubble_size = supply_value / 5e6
+                bubble_size = max(supply_value / 5e6, 1)
                 folium.CircleMarker(
                     location=[lat, lon],
                     radius=bubble_size,
@@ -1693,24 +1692,19 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
                     popup=f'지역 코드: {region_code}<br>공급가액: {supply_value:,.0f}원'
                 ).add_to(combined_map)
                 logger.debug(f"전체 지역 코드 {region_code}에 대한 CircleMarker 추가: 위치=({lat}, {lon}), 공급가액={supply_value}")
-                matched_regions.add(region_code)  # Ensure matched regions are captured
+                matched_regions.add(region_code)
             else:
                 logger.warning(f"전체 지역 코드 {region_code}에 대한 좌표 정보가 없습니다.")
-                unmatched_regions.add(region_code)  # Ensure unmatched regions are captured
+                unmatched_regions.add(region_code)
 
-        # Save combined map as HTML
         combined_html_path = os.path.join(output_dir_html, "연도별_지역별_판매량.html")
         combined_map.save(combined_html_path)
         logger.info(f"전체 지역별 Folium 맵 HTML 저장 완료: {combined_html_path}")
 
-        # Save combined map as PNG
         combined_png_path = os.path.join(output_dir_png, "연도별_지역별_판매량.png")
         save_map_as_png(combined_html_path, combined_png_path)
         logger.info(f"전체 지역별 맵 PNG 저장 완료: {combined_png_path}")
 
-        # ---- Add Excel Saving for Combined Data ----
-
-        # Combine all top5 data into a single DataFrame
         combined_top5_df = pd.concat(combined_top5_dict.values(), ignore_index=True)
         logger.debug(f"모든 연도의 상위 5개 지역 데이터 결합 완료:\n{combined_top5_df.head()}")
 
@@ -1721,7 +1715,6 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
         combined_top5_df = combined_top5_df.head(5)
         logger.debug(f"최종 전체 상위 5개 지역:\n{combined_top5_df}")
 
-        # Define combined Excel file path
         combined_excel_path = os.path.join(output_dir_xlsx, "연도별_지역별_판매량.xlsx")
         try:
             with pd.ExcelWriter(combined_excel_path, engine='xlsxwriter') as writer:
@@ -1730,13 +1723,9 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
         except Exception as e:
             logger.error(f"전체 연도 상위 5개 지역 Excel 저장 중 오류 발생: {e}", exc_info=True)
 
-        # ---- Save Matched and Unmatched Regions to TXT Files ----
-
-        # Define paths for TXT files
         matched_txt_path = os.path.join(output_dir_xlsx, "matched_regions.txt")
         unmatched_txt_path = os.path.join(output_dir_xlsx, "unmatched_regions.txt")
 
-        # Save matched regions
         try:
             with open(matched_txt_path, 'w', encoding='utf-8') as f:
                 for code in sorted(matched_regions):
@@ -1745,7 +1734,6 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
         except Exception as e:
             logger.error(f"매칭된 지역 코드 목록 저장 중 오류 발생: {e}", exc_info=True)
 
-        # Save unmatched regions
         try:
             with open(unmatched_txt_path, 'w', encoding='utf-8') as f:
                 for code in sorted(unmatched_regions):
@@ -1755,7 +1743,7 @@ def analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_di
             logger.error(f"매칭되지 않은 지역 코드 목록 저장 중 오류 발생: {e}", exc_info=True)
 
     except Exception as e:
-        logger.error(f"전체 연도 상위 5개 지역 Excel 저장 중 오류 발생: {e}", exc_info=True)
+        logger.error(f"전체 분석 과정 중 오류 발생: {e}", exc_info=True)
 
 # ----------------------------
 # Main Processing Function
@@ -1765,7 +1753,6 @@ def process_all_analysis():
     Main function to orchestrate all analysis tasks.
     """
     try:
-        # 1) 경로 생성
         input_file = './merged/merged_data.xlsx'
         geo_file_path = './유저/SIG.geojson'
         region_file_path = './유저/region_data.json'
@@ -1774,82 +1761,58 @@ def process_all_analysis():
         output_dir_html = paths["output_dir_html"]
         output_dir_png  = paths["output_dir_png"]
 
-        # 2) DB/엑셀 로딩
         oracle_data, oracle_item = retrieve_oracle_data()
-        merged_data = pd.read_excel(input_file)  # 사용자가 가진 merged_data.xlsx
+        merged_data = pd.read_excel(input_file)
 
-        # 3) 매출,비용,순이익 계산
         sales_data, sales_by_year = calculate_sales(merged_data)
         cost_by_year = calculate_cost(merged_data)
         net_profit = calculate_net_profit(sales_by_year, cost_by_year)
-
         net_profit['년도'] = net_profit['년도'].astype(int)
 
-        # 4) (올해 -> 내년) 예측
         net_profit = predict_next_year_for_each_year(net_profit)
 
-        # 5) 각 연도별 그래프 (올해 vs 내년)
         min_year = net_profit['년도'].min()
         max_year = net_profit['년도'].max()
         for y in range(min_year, max_year+1):
-            # 해당 연도의 실제값
             row_h = net_profit[net_profit['년도'] == y]
             if row_h.empty:
                 continue
-            # dict화
+
             hist_data = {
                 '매출': row_h['매출'].values[0],
                 '판관비': row_h['판관비'].values[0],
                 '당기순이익': row_h['당기순이익'].values[0]
             }
-            # 올해 행에 "예측"은 (내년 예측)
             pred_data = {
                 '매출': row_h['예측매출'].values[0],
                 '판관비': row_h['예측판관비'].values[0],
                 '당기순이익': row_h['예측당기순이익'].values[0]
             }
-
             plot_year_with_prediction(y, hist_data, pred_data, output_dir_html, output_dir_png)
 
-        # 6) 전체 그래프
         plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_png)
 
-        # 7) 재무데이터 저장
         financial_output_path = os.path.join(output_dir_xlsx, "연도별_재무지표.xlsx")
         save_excel(net_profit, financial_output_path)
         print(f"재무데이터 Excel 파일 저장 완료: {financial_output_path}")
 
-        # ---------------------------------------------
-        # 카테고리별 분석 수행
-        # ---------------------------------------------
         analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html, output_dir_png)
-
-        # ---------------------------------------------
-        # 기타 분석 수행
-        # ---------------------------------------------
-
-        # 8) 성별별 분석 수행
         analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
-
-        # 9) 연령대별 분석 수행
         analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
-
-        # 10) VIP 유저 분석 수행
         analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
 
-        # Validate paths
         for path in [input_file, geo_file_path, region_file_path]:
             if not os.path.exists(path):
                 raise FileNotFoundError(f"Required file not found: {path}")
 
-        # Load region data
         with open(region_file_path, "r", encoding="utf-8") as f:
             region_data = json.load(f)
 
-        # Area-wise Analysis
-        analyze_area(merged_data, oracle_data, geo_file_path, region_data, output_dir_xlsx, output_dir_html, output_dir_png)
+        analyze_area(
+            merged_data, oracle_data, geo_file_path,
+            region_data, output_dir_xlsx, output_dir_html, output_dir_png
+        )
 
-        # 모든 분석 작업이 정상적으로 완료된 후 반환
         print("모든 분석 작업이 완료되었습니다.")
         return True, "모든 분석 작업이 완료되었습니다."
 
@@ -1859,4 +1822,3 @@ def process_all_analysis():
     except Exception as e:
         print(f"Error in process_all_analysis: {str(e)}")
         return False, str(e)
-#

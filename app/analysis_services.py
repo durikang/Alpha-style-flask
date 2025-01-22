@@ -1070,4 +1070,3 @@ def process_all_analysis():
     except Exception as e:
         logging.error(f"Error in process_all_analysis: {str(e)}")
         return False, str(e)
-'''
