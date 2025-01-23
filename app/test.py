@@ -1880,27 +1880,31 @@ def process_all_analysis():
     Main function to orchestrate all analysis tasks.
     """
     try:
+        # File paths
         input_file = './merged/merged_data.xlsx'
         geo_file_path = './유저/SIG.geojson'
         region_file_path = './유저/region_data.json'
+
+        # Create output directories
         paths = create_output_paths()
         output_dir_xlsx = paths["output_dir_xlsx"]
         output_dir_html = paths["output_dir_html"]
         output_dir_png = paths["output_dir_png"]
 
+        # Load data from database and Excel
         oracle_data, oracle_item, oracle_area = retrieve_oracle_data()
         merged_data = pd.read_excel(input_file)
 
-        # 계산 수행
+        # Perform calculations
         sales_data, sales_by_year = calculate_sales(merged_data)
         cost_by_year = calculate_cost(merged_data)
         net_profit = calculate_net_profit(sales_by_year, cost_by_year)
         net_profit['년도'] = net_profit['년도'].astype(int)
 
-        # 예측 데이터 생성
+        # Predict future data
         net_profit = predict_next_year_for_each_year(net_profit)
 
-        # 전체 데이터 합산 추가
+        # Add total row to dataset
         total_row = {
             '년도': '전체',
             '매출': net_profit['매출'].sum(),
@@ -1913,15 +1917,41 @@ def process_all_analysis():
         total_row_df = pd.DataFrame([total_row])
         combined_net_profit = total_row_df
 
-        # 전체 데이터를 포함한 Excel 저장
+        # 5) 각 연도별 그래프 (올해 vs 내년)
+        min_year = net_profit['년도'].min()
+        max_year = net_profit['년도'].max()
+        for y in range(min_year, max_year + 1):
+            # 해당 연도의 실제값
+            row_h = net_profit[net_profit['년도'] == y]
+            if row_h.empty:
+                continue
+            # dict화
+            hist_data = {
+                '매출': row_h['매출'].values[0],
+                '판관비': row_h['판관비'].values[0],
+                '당기순이익': row_h['당기순이익'].values[0]
+            }
+            # 올해 행에 "예측"은 (내년 예측)
+            pred_data = {
+                '매출': row_h['예측매출'].values[0],
+                '판관비': row_h['예측판관비'].values[0],
+                '당기순이익': row_h['예측당기순이익'].values[0]
+            }
+
+            # 각 연도별 그래프 생성
+            plot_year_with_prediction(y, hist_data, pred_data, output_dir_html, output_dir_png)
+
+        # 6) 전체 그래프 생성
+        plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_png)
+
+
+        # Save overall financial data to Excel
         financial_output_path = os.path.join(output_dir_xlsx, "연도별_재무지표.xlsx")
         combined_net_profit.to_excel(financial_output_path, index=False)
         print(f"전체 데이터를 포함한 Excel 저장 완료: {financial_output_path}")
 
-        # 연도별 데이터를 저장
-
+        # Save yearly financial data
         for year in net_profit['년도'].unique():
-            # {year}를 str(year)로 수정
             year_dir = os.path.join(output_dir_xlsx, str(year))
             os.makedirs(year_dir, exist_ok=True)
             year_data = net_profit[net_profit['년도'] == year]
@@ -1929,23 +1959,23 @@ def process_all_analysis():
             year_data.to_excel(year_file_path, index=False)
             print(f"{year}년 재무지표 저장 완료: {year_file_path}")
 
+
+        # Perform various analyses
         analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html, output_dir_png)
         analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
         analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
         analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html, output_dir_png)
 
+        # Check required files
         for path in [input_file, geo_file_path, region_file_path]:
             if not os.path.exists(path):
                 raise FileNotFoundError(f"Required file not found: {path}")
 
+        # Load region data
         with open(region_file_path, "r", encoding="utf-8") as f:
             region_data = json.load(f)
 
-        '''analyze_area(
-            merged_data, oracle_data, geo_file_path,
-            region_data, output_dir_xlsx, output_dir_html, output_dir_png
-        )
-        '''
+        # Perform area analysis
         analyze_area(
             oracle_area, geo_file_path,
             region_data, output_dir_xlsx, output_dir_html, output_dir_png
