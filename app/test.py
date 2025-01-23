@@ -15,6 +15,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 import time
 import logging
 from selenium.webdriver.chrome.options import Options
+from pathlib import Path
+from openpyxl import Workbook, load_workbook
 
 
 # ----------------------------
@@ -329,6 +331,7 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
     # **수정된 부분 시작** #
     # ----------------------------
     # 각 년도별로 다음 년도의 예측값을 현재 년도의 '예측 공급가액'에 저장
+    # 성별별 데이터 예측
     for gender in year_gender_spending['성별'].unique():
         gender_data = year_gender_spending[year_gender_spending['성별'] == gender].copy()
         gender_data.sort_values('년도', inplace=True)
@@ -356,14 +359,35 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
                 '예측 공급가액'
             ] = pred_value
 
-    # After predictions, ensure '공급가액' and '예측 공급가액' are float
+    # Ensure '공급가액' and '예측 공급가액' are float
     year_gender_spending['공급가액'] = year_gender_spending['공급가액'].astype(float).fillna(0)
     year_gender_spending['예측 공급가액'] = year_gender_spending['예측 공급가액'].astype(float).fillna(0)
 
-    # Save aggregated data to Excel (actual and predicted)
+    # 성별별 합산 데이터 추가
+    total_by_gender = (
+        year_gender_spending.groupby('성별')[['공급가액', '예측 공급가액']]
+        .sum()
+        .reset_index()
+    )
+    total_by_gender['년도'] = '전체'  # "년도"를 "전체"로 설정
+
+    # 컬럼 순서 맞추기
+    total_by_gender = total_by_gender[['년도', '성별', '공급가액', '예측 공급가액']]
+
+    # 설명 컬럼 추가
+    description = "\n".join(
+        f"전체 {row['성별']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측 공급가액']}"
+        for _, row in total_by_gender.iterrows()
+    )
+
+    # "설명" 컬럼 생성: 첫 번째 행에만 설명 추가
+    total_by_gender['설명'] = ""
+    total_by_gender.loc[0, '설명'] = description
+
+    # 데이터 Excel로 저장
     gender_output = os.path.join(output_dir_xlsx, "성별별_판매량.xlsx")
-    save_excel(year_gender_spending, gender_output)
-    print(f"성별 매출 데이터 Excel 파일 저장 완료: {gender_output}")
+    total_by_gender.to_excel(gender_output, index=False)
+    print(f"성별별 전체 매출 데이터 Excel 파일 저장 완료: {gender_output}")
 
     # Generate and save pie charts and Excel files for each year including predictions
     for year in sorted(year_gender_spending['년도'].dropna().unique()):
@@ -377,7 +401,17 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         print(year_dir_html, year_dir_png, year_dir_xlsx)
 
         # 현재 루프에서 year_data를 정의
-        year_data = year_gender_spending[year_gender_spending['년도'] == year]
+        year_data = year_gender_spending[year_gender_spending['년도'] == year].copy()
+
+        # 설명 컬럼 추가: 성별 데이터를 한 줄로 요약
+        description = "\n".join(
+            f"{row['년도']}년도 {row['성별']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측 공급가액']}"
+            for _, row in year_data.iterrows()
+        )
+
+        # 설명 컬럼 생성: 첫 번째 행에만 설명 추가
+        year_data['설명'] = ""
+        year_data.loc[year_data.index[0], '설명'] = description
 
         # Save to Excel (actual and predicted values)
         year_excel_output = os.path.join(year_dir_xlsx, f"{year}_성별_매출.xlsx")
@@ -411,6 +445,7 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
             html_file = os.path.join(year_dir_html, f"{year}_성별_매출.html")
             png_file = os.path.join(year_dir_png, f"{year}_성별_매출.png")
             save_plotly_fig(fig, html_file, png_file)
+            print(f"{year}년 성별 매출 그래프 저장 완료: {html_file}, {png_file}")
         except Exception as e:
             print(f"그래프 생성 중 오류 발생: {e}")
 
@@ -551,42 +586,63 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         year_age_spending['공급가액'] = year_age_spending['공급가액'].astype(float).fillna(0)
         year_age_spending['예측 공급가액'] = year_age_spending['예측 공급가액'].astype(float).fillna(0)
 
-        # 10. 집계 데이터 Excel로 저장
+        # 나이대별 합산 데이터 추가
+        total_by_age_group = (
+            year_age_spending.groupby('나이대')[['공급가액', '예측 공급가액']]
+            .sum()
+            .reset_index()
+        )
+        total_by_age_group['년도'] = '전체'  # "년도"를 "전체"로 설정
+
+        # 컬럼 순서 맞추기
+        total_by_age_group = total_by_age_group[['년도', '나이대', '공급가액', '예측 공급가액']]
+
+        # 설명 컬럼 추가
+        description = "\n".join(
+            f"전체 {row['나이대']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측 공급가액']}"
+            for _, row in total_by_age_group.iterrows()
+        )
+
+        # "설명" 컬럼 생성: 첫 번째 행에만 설명 추가
+        total_by_age_group['설명'] = ""
+        total_by_age_group.loc[0, '설명'] = description
+
+        # 데이터 Excel로 저장
         age_output = os.path.join(output_dir_xlsx, "나이대별_판매량.xlsx")
-        save_excel(year_age_spending, age_output)
-        print(f"연령대별 매출 데이터 Excel 파일 저장 완료: {age_output}")
+        total_by_age_group.to_excel(age_output, index=False)
+        print(f"연령대별 전체 매출 데이터 Excel 파일 저장 완료: {age_output}")
 
         # 11. 연도별 파이 차트 및 Excel 저장
         for year in sorted(year_age_spending['년도'].dropna().unique()):
             try:
-                year = int(year)
+                year = int(year)  # 현재 처리 중인 연도를 정수로 변환
                 year_dir_html = os.path.join(output_dir_html, str(year))
                 year_dir_png = os.path.join(output_dir_png, str(year))
-                year_dir_xlsx = os.path.join(output_dir_xlsx, str(year))  # Directory for Excel
+                year_dir_xlsx = os.path.join(output_dir_xlsx, str(year))
                 os.makedirs(year_dir_html, exist_ok=True)
                 os.makedirs(year_dir_png, exist_ok=True)
-                os.makedirs(year_dir_xlsx, exist_ok=True)  # Ensure Excel directory exists
+                os.makedirs(year_dir_xlsx, exist_ok=True)
                 print(f"Directories 생성 완료: {year_dir_html}, {year_dir_png}, {year_dir_xlsx}")
 
-                year_age_spending['설명'] = ""
-                grouped_data = year_age_spending.groupby('년도')
+                # 현재 연도 데이터 추출
+                current_year_data = year_age_spending[year_age_spending['년도'] == year].copy()
 
-                for year, group in grouped_data:
-                    # 각 년도별 데이터를 한 줄씩 설명에 추가
-                    description = "\n".join(
-                        f"{row['년도']}년도 {row['나이대']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측 공급가액']}"
-                        for _, row in group.iterrows()
-                    )
-                    # 첫 번째 행에만 설명 추가
-                    year_age_spending.loc[year_age_spending['년도'] == year, '설명'] = description
+                # 설명 컬럼 생성: 모든 데이터를 하나로 결합
+                description = "\n".join(
+                    f"{row['년도']}년도 {row['나이대']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측 공급가액']}"
+                    for _, row in current_year_data.iterrows()
+                )
 
-                # Save to Excel (actual and predicted values)
+                # 첫 번째 행에만 설명 추가, 나머지 행은 빈 값으로 설정
+                current_year_data['설명'] = ""
+                current_year_data.loc[current_year_data.index[0], '설명'] = description
+
+                # Excel 저장
                 year_excel_output = os.path.join(year_dir_xlsx, f"{year}_나이대별_판매량.xlsx")
-                current_year_data = year_age_spending[year_age_spending['년도'] == year]
                 save_excel(current_year_data, year_excel_output)
                 print(f"{year}년 연령대별 매출 데이터 Excel 파일 저장 완료: {year_excel_output}")
 
-                # Generate and save pie chart (using actual values)
+                # 원형 그래프 생성 및 저장
                 try:
                     fig = go.Figure(data=[
                         go.Pie(
@@ -610,102 +666,14 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                     html_file = os.path.join(year_dir_html, f"{year}_나이대별_매출.html")
                     png_file = os.path.join(year_dir_png, f"{year}_나이대별_매출.png")
                     save_plotly_fig(fig, html_file, png_file)
+                    print(f"{year}년 연령대별 원형 그래프 저장 완료: {html_file}, {png_file}")
                 except Exception as e:
                     print(f"그래프 생성 중 오류 발생: {e}")
             except Exception as e:
                 print(f"년도 {year} 처리 중 오류 발생: {e}")
-
-        # 12. 라인 차트 생성 (실제 + 예측)
-        try:
-            # Pivot 테이블 생성
-            age_pivot = year_age_spending.pivot_table(
-                index='년도',
-                columns='나이대',
-                values=['공급가액', '예측 공급가액'],
-                aggfunc='sum',
-                observed=True  # 명시적으로 설정하여 FutureWarning 해결
-            ).fillna(0)
-
-            # Flatten the multi-level columns
-            age_pivot.columns = [f"{val}_{col}" for val, col in age_pivot.columns]
-
-            # Create separate DataFrames for actual and predicted
-            age_actual = age_pivot.filter(like='공급가액').copy()
-            age_predicted = age_pivot.filter(like='예측 공급가액').copy()
-
-            # Convert to 억 단위
-            age_actual_plot = age_actual / 1e8
-            age_predicted_plot = age_predicted / 1e8
-
-            # Plot actual and predicted
-            fig = go.Figure()
-            colors = {age_group: color for age_group, color in
-                      zip(year_age_spending['나이대'].unique(), ['blue', 'red', 'green', 'yellow'])}
-            for age_group in year_age_spending['나이대'].unique():
-                actual_col = f"공급가액_{age_group}"
-                predicted_col = f"예측 공급가액_{age_group}"
-                if actual_col in age_actual_plot.columns:
-                    fig.add_trace(go.Scatter(
-                        x=age_actual_plot.index.astype(int),
-                        y=age_actual_plot[actual_col],
-                        mode='lines+markers',
-                        name=f'{age_group} 매출 (실제)',
-                        line=dict(color=colors.get(age_group, 'black'))
-                    ))
-                if predicted_col in age_predicted_plot.columns:
-                    fig.add_trace(go.Scatter(
-                        x=age_predicted_plot.index.astype(int),
-                        y=age_predicted_plot[predicted_col],
-                        mode='lines+markers',
-                        name=f'{age_group} 매출 (예측)',
-                        line=dict(dash='dot', color=colors.get(age_group, 'black')),
-                        marker=dict(symbol='diamond', size=8, color=colors.get(age_group, 'black'))
-                    ))
-
-            fig.update_layout(
-                title='연도별 연령대별 매출 (실제 + 예측)',
-                xaxis_title='년도',
-                yaxis_title='금액 (억 단위)',
-                font=dict(family="Arial, sans-serif", size=12),
-                legend=dict(orientation="h", y=-0.2),
-            )
-
-            # Save line chart
-            html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
-            png_file = os.path.join(output_dir_png, "연도별_나이대별_매출.png")
-            save_plotly_fig(fig, html_file, png_file)
-
-        except Exception as e:
-            print(f"Age Group 분석 중 오류 발생: {e}")
-
-        # Generate and save pie chart (using actual values)
-        try:
-            fig = go.Figure(data=[
-                go.Pie(
-                    labels=year_data['나이대'],
-                    values=year_data['공급가액'],
-                    hole=0.3,
-                    textinfo='label+percent'
-                )
-            ])
-            fig.update_layout(
-                title=f"{year}년 연령대별 매출 비중",
-                font=dict(family="Arial, sans-serif", size=12),
-                legend=dict(
-                    x=0,
-                    y=1,
-                    xanchor="left",
-                    yanchor="top"
-                )
-            )
-
-            html_file = os.path.join(year_dir_html, f"{year}_연령대별_매출.html")
-            png_file = os.path.join(year_dir_png, f"{year}_연령대별_매출.png")
-            save_plotly_fig(fig, html_file, png_file)
-        except Exception as e:
-            print(f"그래프 생성 중 오류 발생: {e}")
     except Exception as e:
         print(f"그래프 생성 중 오류 발생: {e}")
+
     # Generate and save line chart for age groups and predicted
     try:
         # Pivot both '공급가액' and '예측 공급가액' with observed=True to remove FutureWarning
@@ -764,50 +732,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         # Save line chart
         html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
         png_file = os.path.join(output_dir_png, "연도별_나이대별_매출.png")
-        save_plotly_fig(fig, html_file, png_file)
-
-        # ----------------------------
-        # Generate and Save Prediction Plots
-        # ----------------------------
-        # 예측 데이터만 별도로 시각화 (년도별 예측)
-        fig = go.Figure()
-        for age_group in year_age_spending['나이대'].unique():
-            actual_col = f"공급가액_{age_group}"
-            predicted_col = f"예측 공급가액_{age_group}"
-            if actual_col in age_actual_plot.columns and predicted_col in age_predicted_plot.columns:
-                actual = age_actual_plot[actual_col]
-                predicted = age_predicted_plot[predicted_col]
-
-                # 실제 값
-                fig.add_trace(go.Scatter(
-                    x=age_actual_plot.index.astype(int),
-                    y=actual,
-                    mode='lines+markers',
-                    name=f'{age_group} 매출 (실제)',
-                    line=dict(color=colors.get(age_group, 'black'))
-                ))
-
-                # 예측 값
-                fig.add_trace(go.Scatter(
-                    x=age_predicted_plot.index.astype(int),
-                    y=predicted,
-                    mode='lines+markers',
-                    name=f'{age_group} 매출 (예측)',
-                    line=dict(dash='dot', color=colors.get(age_group, 'black')),
-                    marker=dict(symbol='diamond', size=8, color=colors.get(age_group, 'black'))
-                ))
-
-        fig.update_layout(
-            title='연도별 연령대별 매출 (실제 + 예측)',
-            xaxis_title='년도',
-            yaxis_title='금액 (억 단위)',
-            font=dict(family="Arial, sans-serif", size=12),
-            legend=dict(orientation="h", y=-0.2),
-        )
-
-        # Save the combined line chart
-        html_file = os.path.join(output_dir_html, "연도별_나이대별_매출_예측.html")
-        png_file = os.path.join(output_dir_png, "연도별_나이대별_매출_예측.png")
         save_plotly_fig(fig, html_file, png_file)
 
     except Exception as e:
@@ -968,6 +892,16 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             combined = pd.merge(melted_actual, melted_pred, on=['년도', '카테고리'], how='left')
             combined['예측공급가액'] = combined['예측공급가액'].fillna(0)
 
+            # 설명 컬럼 추가
+            description = "\n".join(
+                f"{row['년도']}년도 {row['카테고리']} - 실제공급가액: {row['실제공급가액']}, 예측공급가액: {row['예측공급가액']}"
+                for _, row in combined.iterrows()
+            )
+
+            # "설명" 컬럼 생성: 첫 번째 행에만 설명 추가
+            combined['설명'] = ""
+            combined.loc[combined.index[0], '설명'] = description
+
             # Debugging: 출력해보기
             print(f"{year}년 데이터 확인:\n{combined}")
 
@@ -975,7 +909,6 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             excel_filename = f"{year}_카테고리별_판매량.xlsx"  # 파일 이름에 '가로형' 추가
             excel_path = os.path.join(year_dir_xlsx, excel_filename)
             save_excel(combined, excel_path)
-            print(f"{year}년 카테고리별 예측 Excel 파일 저장 완료: {excel_path}")
 
             # --------- 1-1. 년도별 카테고리별 그래프 생성 ---------
             try:
@@ -1015,7 +948,6 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             except Exception as e:
                 print(f"{year}년 카테고리별 그래프 생성 중 오류 발생: {e}")
 
-        # --------- 2. 전체 카테고리별 합산 데이터 저장 및 그래프 생성 ---------
         print("전체 카테고리별 합산 데이터 생성 및 저장 시작.")
         # 모든 연도의 데이터를 합산
         sum_cat = cat_df_final.groupby('카테고리').agg({
@@ -1023,6 +955,23 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             '예측공급가액': 'sum'
         }).reset_index()
         print(f"합산된 카테고리별 데이터:\n{sum_cat}")
+
+        # 합산 데이터를 '카테고리별_판매량_예측.xlsx' 파일로 저장
+        sum_cat['년도'] = "전체"  # 모든 데이터의 "년도" 값을 "전체"로 설정
+
+        # 설명 컬럼 추가
+        description = "\n".join(
+            f"전체 {row['카테고리']} - 실제공급가액: {row['실제공급가액']}, 예측공급가액: {row['예측공급가액']}"
+            for _, row in sum_cat.iterrows()
+        )
+
+        # "설명" 컬럼 생성: 첫 번째 행에만 설명 추가
+        sum_cat['설명'] = ""
+        if not sum_cat.empty:
+            sum_cat.loc[0, '설명'] = description
+
+        # 컬럼 순서 재배치 (년도가 맨 앞으로 오도록)
+        sum_cat = sum_cat[['년도', '카테고리', '실제공급가액', '예측공급가액', '설명']]
 
         # 합산 데이터를 '카테고리별_판매량_예측.xlsx' 파일로 저장
         sum_excel_path = os.path.join(output_dir_xlsx, "연도별_카테고리별_판매량.xlsx")
@@ -1176,15 +1125,20 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             df_excel['실제공급가액'] *= 1e8
             df_excel['예측공급가액'] *= 1e8
 
+            # 설명 컬럼 추가
+            description = "\n".join(
+                f"{row['비율']} - 실제공급가액: {row['실제공급가액']}, 예측공급가액: {row['예측공급가액']}"
+                for _, row in df_excel.iterrows()
+            )
+            df_excel['설명'] = ""
+            df_excel.loc[0, '설명'] = description  # 첫 번째 행에만 설명 추가
+
             # 엑셀 파일 저장
             excel_path = os.path.join(year_dir_xlsx, f"{year}_VIP_유저.xlsx")
             df_excel_copy_file = df_excel.copy()
             df_excel_copy_file.insert(0, '년도', year)
-            try:
-                df_excel_copy_file.to_excel(excel_path, index=False)
-                print(f"{year}년 VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path}")
-            except Exception as e:
-                print(f"Excel 파일 저장 중 오류 발생: {e}")
+            save_excel(df_excel_copy_file, excel_path)
+            print(f"{year}년 VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path}")
 
             # (A-4) 그래프
             try:
@@ -1320,6 +1274,15 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             df_excel_total['실제공급가액'] *= 1e8
             df_excel_total['예측공급가액'] *= 1e8
 
+            # "년도" 컬럼 추가 및 설명 생성
+            df_excel_total.insert(0, '년도', '전체')  # "년도" 컬럼 추가
+            description = "\n".join(
+                f"{row['비율']} - 실제공급가액: {row['실제공급가액']}, 예측공급가액: {row['예측공급가액']}"
+                for _, row in df_excel_total.iterrows()
+            )
+            df_excel_total['설명'] = ""  # "설명" 컬럼 추가
+            df_excel_total.loc[0, '설명'] = description  # 첫 번째 행에 설명 추가
+
             # 엑셀 파일 저장
             excel_path_total = os.path.join(output_dir_xlsx, "연도별_VIP_유저.xlsx")
             df_excel_total_copy_file = df_excel_total.copy()
@@ -1328,8 +1291,7 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 print(f"전체(모든 연도 합산) VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path_total}")
             except Exception as e:
                 print(f"Excel 파일 저장 중 오류 발생: {e}")
-
-            # (B-3) 그래프 (단일 그래프에 파랑 vs 노랑 + 10%,20%,30% 점선)
+                # (B-3) 그래프 (단일 그래프에 파랑 vs 노랑 + 10%,20%,30% 점선)
             try:
                 fig_tot = go.Figure()
 
@@ -1394,14 +1356,12 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             except Exception as e:
                 print(f"그래프 생성 중 오류 발생: {e}")
 
-            # ----------------------------
-            # (B-4) 그래프: 전체 누적분포
-            # ----------------------------
-
         except Exception as e:
             print(f"VIP Users 분석 중 오류 발생: {e}")
     except Exception as e:
         print(f"VIP Users 분석 중 오류 발생: {e}")
+
+
 
 
 # ----------------------------
@@ -1777,6 +1737,15 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 # 디렉토리 생성 및 엑셀 저장
                 year_dir_xlsx = os.path.join(output_dir_xlsx, str(year))
                 os.makedirs(year_dir_xlsx, exist_ok=True)
+                # 설명 생성: 각 행에 대한 설명 텍스트 작성
+                description = "\n".join(
+                    f"{row['년도']}년도 {row['지역']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측 공급가액']}"
+                    for _, row in top5_year_area_with_year.iterrows()
+                )
+
+                # 설명을 첫 번째 행에 추가하고 나머지 행은 공백으로 설정
+                top5_year_area_with_year['설명'] = ""
+                top5_year_area_with_year.iloc[0, top5_year_area_with_year.columns.get_loc('설명')] = description
 
                 excel_file_path = os.path.join(year_dir_xlsx, f'{year}_지역별_판매량.xlsx')
                 with pd.ExcelWriter(excel_file_path, engine='xlsxwriter') as writer:
@@ -1840,15 +1809,22 @@ def analyze_area(oracle_area, geo_file_path, region_data,
             combined_top5_df = combined_top5_df.groupby('지역').sum().reset_index()
             combined_top5_df = combined_top5_df[['지역', '공급가액']].sort_values(by='공급가액', ascending=False)
 
+            # 초기화
             combined_top5_df['예측공급가액'] = np.nan  # 초기화
 
             # 각 지역별로 선형 회귀 적용
             for 지역 in combined_top5_df['지역'].unique():
+                # 지역 데이터 필터링
                 지역_data = user_supply_sum[user_supply_sum['지역'] == 지역].copy()
+
+                # 데이터프레임 확인
+                if not isinstance(지역_data, pd.DataFrame):
+                    raise ValueError(f"지역 {지역}의 데이터가 DataFrame이 아닙니다: {type(지역_data)}")
+
                 지역_data = 지역_data.sort_values('년도')  # 연도 정렬
 
                 if len(지역_data) < 2:
-                    # 데이터가 2개 미만이면 예측 불가, 가장 최근 공급가액을 그대로 예측값으로 사용
+                    # 데이터가 2개 미만이면 예측 불가, 최근 공급가액을 그대로 사용
                     최근_공급가액 = 지역_data['공급가액'].iloc[-1] if not 지역_data.empty else 0
                     combined_top5_df.loc[combined_top5_df['지역'] == 지역, '예측공급가액'] = 최근_공급가액
                     continue
@@ -1864,25 +1840,45 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 예측값 = model.predict([[다음_연도]])[0]
                 combined_top5_df.loc[combined_top5_df['지역'] == 지역, '예측공급가액'] = 예측값
 
+            # 예측값과 공급가액 합산
             combined_top5_df['예측공급가액'] += combined_top5_df['공급가액']
-            # 2. 데이터 정렬 및 저장
+
+            # '년도' 열을 "전체"로 설정
+            combined_top5_df['년도'] = "전체"
+            combined_top5_df = combined_top5_df[['년도'] + [col for col in combined_top5_df.columns if col != '년도']]
+
+            # 데이터 정렬 및 상위 5개 선택
             combined_top5_df = combined_top5_df.sort_values(by='공급가액', ascending=False)
             combined_top5_df = combined_top5_df.head(5)
-            combined_excel_path = os.path.join(output_dir_xlsx, "연도별_지역별_판매량.xlsx")
 
-            try:
-                with pd.ExcelWriter(combined_excel_path, engine='xlsxwriter') as writer:
-                    combined_top5_df.to_excel(writer, sheet_name='상위5_집계', index=False)
-                print(f"전체 연도 상위 5개 지역 Excel (예측 포함) 저장 완료: {combined_excel_path}")
-            except Exception as e:
-                print(f"전체 연도 상위 5개 지역 Excel 저장 중 오류 발생: {e}")
+            # 엑셀 저장
+            combined_excel_path = os.path.join(output_dir_xlsx, "연도별_지역별_판매량.xlsx")
+            combined_top5_df.to_excel(combined_excel_path, index=False)
+
+            # 엑셀 파일 읽기
+            combined_data = pd.read_excel(combined_excel_path)
+
+            # 설명 문자열 생성
+            description = "\n".join(
+                f"{row['지역']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측공급가액']}"
+                for _, row in combined_data.iterrows()
+            )
+
+            # 설명 추가 (첫 번째 행에만 설명 추가)
+            combined_data['설명'] = ""
+            combined_data.iloc[0, combined_data.columns.get_loc('설명')] = description
+
+            # 엑셀 파일 다시 저장
+            combined_data.to_excel(combined_excel_path, index=False)
 
         except Exception as e:
             print(f"전체 분석 과정 중 오류 발생: {e}")
     except Exception as e:
         print(f"전체 분석 과정 중 오류 발생: {e}")
 
-
+def list_xlsx_files(directory):
+    path = Path(directory)
+    return list(path.rglob('*.xlsx'))
 
 # ----------------------------
 # Main Processing Function
@@ -1903,9 +1899,17 @@ def process_all_analysis():
         output_dir_html = paths["output_dir_html"]
         output_dir_png = paths["output_dir_png"]
 
-        # Load data from database and Excel
+        # Ensure output directories exist
+        os.makedirs(output_dir_xlsx, exist_ok=True)
+        os.makedirs(output_dir_html, exist_ok=True)
+        os.makedirs(output_dir_png, exist_ok=True)
+
+
+        # 기존의 데이터 로드 및 분석 코드
         oracle_data, oracle_item, oracle_area = retrieve_oracle_data()
         merged_data = pd.read_excel(input_file)
+
+
 
         # Perform calculations
         sales_data, sales_by_year = calculate_sales(merged_data)
@@ -1929,7 +1933,7 @@ def process_all_analysis():
         total_row_df = pd.DataFrame([total_row])
         combined_net_profit = total_row_df
 
-        # 5) 각 연도별 그래프 (올해 vs 내년)
+        # 각 연도별 그래프 (올해 vs 내년)
         min_year = net_profit['년도'].min()
         max_year = net_profit['년도'].max()
         for y in range(min_year, max_year + 1):
@@ -1953,12 +1957,22 @@ def process_all_analysis():
             # 각 연도별 그래프 생성
             plot_year_with_prediction(y, hist_data, pred_data, output_dir_html, output_dir_png)
 
-        # 6) 전체 그래프 생성
+        # 전체 그래프 생성
         plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_png)
-
 
         # Save overall financial data to Excel
         financial_output_path = os.path.join(output_dir_xlsx, "연도별_재무지표.xlsx")
+
+        # 설명 생성: 전체 데이터를 요약한 텍스트 추가
+        description = "\n".join(
+            f"년도: {row['년도']} - 매출: {row['매출']}, 판관비: {row['판관비']}, 당기순이익: {row['당기순이익']}, "
+            f"예측 매출: {row['예측매출']}, 예측 판관비: {row['예측판관비']}, 예측 당기순이익: {row['예측당기순이익']}"
+            for _, row in combined_net_profit.iterrows()
+        )
+
+        combined_net_profit['설명'] = ""
+        combined_net_profit.loc[0, '설명'] = description  # 첫 번째 행에 설명 추가
+
         combined_net_profit.to_excel(financial_output_path, index=False)
         print(f"전체 데이터를 포함한 Excel 저장 완료: {financial_output_path}")
 
@@ -1967,10 +1981,19 @@ def process_all_analysis():
             year_dir = os.path.join(output_dir_xlsx, str(year))
             os.makedirs(year_dir, exist_ok=True)
             year_data = net_profit[net_profit['년도'] == year]
+
+            # 설명 생성: 해당 연도의 데이터를 요약한 텍스트 추가
+            year_description = "\n".join(
+                f"년도: {row['년도']} - 매출: {row['매출']}, 판관비: {row['판관비']}, 당기순이익: {row['당기순이익']}, "
+                f"예측 매출: {row['예측매출']}, 예측 판관비: {row['예측판관비']}, 예측 당기순이익: {row['예측당기순이익']}"
+                for _, row in year_data.iterrows()
+            )
+            year_data['설명'] = ""
+            year_data.iloc[0, year_data.columns.get_loc('설명')] = year_description
+
             year_file_path = os.path.join(year_dir, f"{year}_재무지표.xlsx")
             year_data.to_excel(year_file_path, index=False)
             print(f"{year}년 재무지표 저장 완료: {year_file_path}")
-
 
         # Perform various analyses
         analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html, output_dir_png)
@@ -1992,14 +2015,40 @@ def process_all_analysis():
             oracle_area, geo_file_path,
             region_data, output_dir_xlsx, output_dir_html, output_dir_png
         )
+        # 1) 최종 결과를 저장할 새 Workbook(엑셀) 생성
+        master_wb = Workbook()
+        master_ws = master_wb.active
+        master_ws.title = "MergedData"  # 시트 이름(원하시면 변경 가능)
 
-        print("모든 분석 작업이 완료되었습니다.")
-        return True, "모든 분석 작업이 완료되었습니다."
+        # 2) 폴더 안의 모든 .xlsx 파일 목록 가져오기
+        xlsx_files = list(Path(output_dir_xlsx).rglob("*.xlsx"))
+
+        # 3) 파일 하나씩 열어서, 행 단위로 마스터 시트에 append
+        for file_path in xlsx_files:
+            # 예: 내부 관리용 파일(master_data.xlsx 등)은 건너뛰고 싶다면 다음과 같이 처리
+            # if file_path.name == "master_data.xlsx":
+            #     continue
+
+            print(f"[INFO] '{file_path.name}' 파일 처리 중...")
+
+            # (a) 원본 파일 열기
+            wb = load_workbook(file_path)
+
+            # (b) 특정 시트만 쓴다면 여기에서 sheet 이름 지정 가능
+            #     기본적으로 첫 번째 시트를 사용한다고 가정
+            sheet_name = wb.sheetnames[0]
+            ws = wb[sheet_name]
+
+            # (c) 원본 파일의 모든 행을 순회하며, 최종 마스터 시트에 그대로 append
+            for row in ws.iter_rows(values_only=True):
+                master_ws.append(row)
+
+        # 4) 최종 워크북을 파일로 저장
+        output_file_path = os.path.join(output_dir_xlsx, "엑셀데이터종합본.xlsx")
+        master_wb.save(output_file_path)
+        print(f"[DONE] 모든 파일을 이어 붙인 결과가 '{output_dir_xlsx}' 에 저장되었습니다.")
+
 
     except FileNotFoundError as e:
         print(e)
-        return False, str(e)
-    except Exception as e:
-        print(f"Error in process_all_analysis: {str(e)}")
-        return False, str(e)
-#
+    return True, "모든 분석 작업이 완료되었습니다."

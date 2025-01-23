@@ -415,6 +415,7 @@ def download_files():
             './analysis/xlsx/연도별_카테고리별_판매량.xlsx',
             './analysis/xlsx/연도별_VIP_유저.xlsx',
             './analysis/xlsx/연도별_지역별_판매량.xlsx',
+            './analysis/xlsx/엑셀데이터종합본.xlsx'
         ]
 
         # 연도별 파일 경로 리스트
