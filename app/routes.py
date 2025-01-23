@@ -343,7 +343,7 @@ def download_files():
                 './analysis/png/연도별_카테고리별_판매량.png',
                 './analysis/png/연도별_나이대별_매출.png',
                 './analysis/png/연도별_성별_매출.png',
-                './analysis/png/전체_판매량_VIP.png',
+                './analysis/png/연도별_VIP_유저.png',
                 './analysis/png/연도별_지역별_판매량.png',
                 './analysis/xlsx/cost.xlsx',
                 './analysis/xlsx/net_profit.xlsx',

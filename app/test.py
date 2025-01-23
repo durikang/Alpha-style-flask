@@ -568,6 +568,18 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 os.makedirs(year_dir_xlsx, exist_ok=True)  # Ensure Excel directory exists
                 print(f"Directories 생성 완료: {year_dir_html}, {year_dir_png}, {year_dir_xlsx}")
 
+                year_age_spending['설명'] = ""
+                grouped_data = year_age_spending.groupby('년도')
+
+                for year, group in grouped_data:
+                    # 각 년도별 데이터를 한 줄씩 설명에 추가
+                    description = "\n".join(
+                        f"{row['년도']}년도 {row['나이대']} - 공급가액: {row['공급가액']}, 예측 공급가액: {row['예측 공급가액']}"
+                        for _, row in group.iterrows()
+                    )
+                    # 첫 번째 행에만 설명 추가
+                    year_age_spending.loc[year_age_spending['년도'] == year, '설명'] = description
+
                 # Save to Excel (actual and predicted values)
                 year_excel_output = os.path.join(year_dir_xlsx, f"{year}_나이대별_판매량.xlsx")
                 current_year_data = year_age_spending[year_age_spending['년도'] == year]
@@ -1990,3 +2002,4 @@ def process_all_analysis():
     except Exception as e:
         print(f"Error in process_all_analysis: {str(e)}")
         return False, str(e)
+#
