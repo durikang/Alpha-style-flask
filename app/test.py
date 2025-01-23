@@ -173,12 +173,6 @@ def calculate_net_profit(sales_by_year, cost_by_year):
 # Plotting Functions
 # ----------------------------
 def plot_year_with_prediction(historical_year, historical_data, future_data, output_dir_html, output_dir_png):
-    """
-    특정 'year'(historical_year)에 대해,
-    - y1: 그 해 실제값
-    - y2: (그 해+1) 예측값 - 실제값
-    로 스택 그래프.
-    """
     fig = go.Figure()
 
     fig.add_trace(go.Bar(
@@ -216,7 +210,6 @@ def plot_year_with_prediction(historical_year, historical_data, future_data, out
     png_dir = os.path.join(output_dir_png, str(historical_year))
     os.makedirs(html_dir, exist_ok=True)
     os.makedirs(png_dir, exist_ok=True)
-
     html_file = os.path.join(html_dir, f"{historical_year}_재무상태표.html")
     png_file = os.path.join(png_dir, f"{historical_year}_재무상태표.png")
 
@@ -1369,11 +1362,7 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
 # Financial Prediction Function
 # ----------------------------
 def predict_next_year_for_each_year(net_profit):
-    """
-    net_profit(년도, 매출, 판관비, 당기순이익) ->
-      각 연도별로 (올해 -> 내년) 선형회귀 예측
-      예측값을 '예측매출','예측판관비','예측당기순이익' 컬럼에 업데이트
-    """
+
     net_profit = net_profit.copy()
     net_profit['년도'] = net_profit['년도'].astype(int)
     net_profit['예측매출'] = np.nan
