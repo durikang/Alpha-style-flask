@@ -304,6 +304,7 @@ def plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_pn
     save_plotly_fig(fig, html_file, png_file)
 
 
+
 # ----------------------------
 # Gender Analysis Function
 # ----------------------------
@@ -1682,13 +1683,9 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 detailed_top5 = detailed_top5.drop(columns=['지역_x', '지역_y'])
 
                 print(f"'지역' 이름 포함 후 데이터:\n{detailed_top5.head()}")
-                print(oracle_area)
-                print(detailed_top5.head())
+
                 top5_year_area = detailed_top5[['지역', '공급가액']].drop_duplicates()
                 sum_by_area = top5_year_area.groupby('지역').sum().reset_index().sort_values(by='공급가액', ascending=False)
-                print(detailed_top5.columns)
-                print(top5_year_area.columns)
-                print(sum_by_area.columns)
                 print(f"지역별 공급가액 합산:\n{sum_by_area}")
 
                 top5_year_area = sum_by_area.head(5)
@@ -1804,19 +1801,16 @@ def analyze_area(oracle_area, geo_file_path, region_data,
 
             # 병합된 데이터프레임에서 head() 호출
             combined_top5_df = pd.concat(combined_top5_dict.values(), ignore_index=True)
-            print(combined_top5_df.head())
+
 
             combined_top5_df = combined_top5_df.groupby('지역').sum().reset_index()
             combined_top5_df = combined_top5_df[['지역', '공급가액']].sort_values(by='공급가액', ascending=False)
-
             # 초기화
             combined_top5_df['예측공급가액'] = np.nan  # 초기화
-
             # 각 지역별로 선형 회귀 적용
             for 지역 in combined_top5_df['지역'].unique():
                 # 지역 데이터 필터링
                 지역_data = user_supply_sum[user_supply_sum['지역'] == 지역].copy()
-
                 # 데이터프레임 확인
                 if not isinstance(지역_data, pd.DataFrame):
                     raise ValueError(f"지역 {지역}의 데이터가 DataFrame이 아닙니다: {type(지역_data)}")
