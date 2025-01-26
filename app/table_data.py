@@ -3,9 +3,10 @@ import os
 import json
 import numpy as np
 
+
 def convert_floats_to_ints(df, columns):
     """
-    지정된 열에서 모든 float 값을 정수로 변환합니다. 소수점 이하를 반올림합니다.
+    지정된 열의 소수점을 반올림하여 정수로 변환합니다.
     """
     for col in columns:
         if col in df.columns:
@@ -13,16 +14,34 @@ def convert_floats_to_ints(df, columns):
             df[col] = df[col].apply(lambda x: int(round(x)) if pd.notnull(x) and isinstance(x, float) else x)
     return df
 
+
 def generate_json_from_excel(year=None):
+    """
+    엑셀 파일을 읽어 JSON 파일로 변환합니다.
+
+    Parameters:
+    - year: 특정 연도를 지정하거나 'all'을 지정할 수 있습니다.
+
+    Returns:
+    - 변환된 JSON 데이터
+    """
     try:
         # 파일 경로 설정
         base_path = './analysis/xlsx'
-        summary_files = f'{base_path}/{year}/{year}_재무지표.xlsx' if year and year.lower() != "all" else f'{base_path}/연도별_재무지표.xlsx'
-        category_file = f'{base_path}/{year}/{year}_카테고리별_판매량.xlsx' if year and year.lower() != "all" else f'{base_path}/연도별_카테고리별_판매량.xlsx'
-        gender_file = f'{base_path}/{year}/{year}_성별_매출.xlsx' if year and year.lower() != "all" else f'{base_path}/성별별_판매량.xlsx'
-        age_file = f'{base_path}/{year}/{year}_나이대별_판매량.xlsx' if year and year.lower() != "all" else f'{base_path}/나이대별_판매량.xlsx'
-        vip_file = f'{base_path}/{year}/{year}_VIP_유저.xlsx' if year and year.lower() != "all" else f'{base_path}/연도별_VIP_유저.xlsx'
-        area_file = f'{base_path}/{year}/{year}_지역별_판매량.xlsx' if year and year.lower() != "all" else f'{base_path}/연도별_지역별_판매량.xlsx'
+        if year and year.lower() != "all":
+            summary_files = f'{base_path}/{year}/{year}_재무지표.xlsx'
+            category_file = f'{base_path}/{year}/{year}_카테고리별_판매량.xlsx'
+            gender_file = f'{base_path}/{year}/{year}_성별_매출.xlsx'
+            age_file = f'{base_path}/{year}/{year}_나이대별_판매량.xlsx'
+            vip_file = f'{base_path}/{year}/{year}_VIP_유저.xlsx'
+            area_file = f'{base_path}/{year}/{year}_지역별_판매량.xlsx'
+        else:
+            summary_files = f'{base_path}/연도별_재무지표.xlsx'
+            category_file = f'{base_path}/연도별_카테고리별_판매량.xlsx'
+            gender_file = f'{base_path}/성별별_판매량.xlsx'
+            age_file = f'{base_path}/나이대별_판매량.xlsx'
+            vip_file = f'{base_path}/연도별_VIP_유저.xlsx'
+            area_file = f'{base_path}/연도별_지역별_판매량.xlsx'
 
         final_json = {}
 
@@ -31,7 +50,7 @@ def generate_json_from_excel(year=None):
             {
                 "name": "summary",
                 "file": summary_files,
-                "required_columns": ['매출', '판관비', '당기순이익', '예측매출', '예측판관비', '예측당기순이익', '설명'],  # '설명' 추가
+                "required_columns": ['매출', '판관비', '당기순이익', '예측매출', '예측판관비', '예측당기순이익', '설명'],
                 "group_col": '년도',
                 "sum_cols": ['매출', '판관비', '당기순이익', '예측매출', '예측판관비', '예측당기순이익'],
                 "total_row_template": {'년도': '전체'}
@@ -39,7 +58,7 @@ def generate_json_from_excel(year=None):
             {
                 "name": "category_sales",
                 "file": category_file,
-                "required_columns": ['카테고리', '실제공급가액', '예측공급가액', '설명'],  # '설명' 추가
+                "required_columns": ['카테고리', '실제공급가액', '예측공급가액', '설명'],
                 "group_col": '카테고리',
                 "sum_cols": ['실제공급가액', '예측공급가액'],
                 "total_row_template": {'카테고리': '전체'}
@@ -47,7 +66,7 @@ def generate_json_from_excel(year=None):
             {
                 "name": "gender_sales",
                 "file": gender_file,
-                "required_columns": ['성별', '실제공급가액', '예측공급가액', '설명'],  # '설명' 추가
+                "required_columns": ['성별', '실제공급가액', '예측공급가액', '설명'],
                 "group_col": '성별',
                 "sum_cols": ['실제공급가액', '예측공급가액'],
                 "total_row_template": {'성별': '전체'}
@@ -55,7 +74,7 @@ def generate_json_from_excel(year=None):
             {
                 "name": "age_group_sales",
                 "file": age_file,
-                "required_columns": ['나이대', '실제공급가액', '예측공급가액', '설명'],  # '설명' 추가
+                "required_columns": ['나이대', '실제공급가액', '예측공급가액', '설명'],
                 "group_col": '나이대',
                 "sum_cols": ['실제공급가액', '예측공급가액'],
                 "total_row_template": {'나이대': '전체'}
@@ -63,7 +82,7 @@ def generate_json_from_excel(year=None):
             {
                 "name": "vip_sales",
                 "file": vip_file,
-                "required_columns": ['비율', '실제공급가액', '예측공급가액', '설명'],  # '설명' 추가
+                "required_columns": ['비율', '실제공급가액', '예측공급가액', '설명'],
                 "group_col": '비율',
                 "sum_cols": ['실제공급가액', '예측공급가액'],
                 "total_row_template": {'비율': '전체'}
@@ -71,7 +90,7 @@ def generate_json_from_excel(year=None):
             {
                 "name": "area_sales",
                 "file": area_file,
-                "required_columns": ['지역', '공급가액', '예측공급가액', '설명'],  # '설명' 추가
+                "required_columns": ['지역', '공급가액', '예측공급가액', '설명'],
                 "group_col": '지역',
                 "sum_cols": ['공급가액', '예측공급가액'],
                 "total_row_template": {'지역': '전체'}
@@ -81,23 +100,24 @@ def generate_json_from_excel(year=None):
         # 열 이름 매핑: 섹션별로 실제공급가액을 나타내는 다른 열 이름을 매핑
         column_mappings = {
             "area_sales": {
-                "공급가액": "공급가액",  # 엑셀의 열 이름을 JSON에 필요한 열 이름으로 매핑
+                "공급가액": "공급가액",
                 "예측공급가액": "예측공급가액",
-                "설명": "설명"  # 필요 시 매핑 추가
+                "설명": "설명"
             },
             "gender_sales": {
-                "공급가액": "실제공급가액",  # '공급가액'을 '실제공급가액'으로 매핑
-                "설명": "설명"  # 필요 시 매핑 추가
+                "공급가액": "실제공급가액",
+                "예측공급가액": "예측공급가액",
+                "설명": "설명"
             },
             "vip_sales": {
-                "실제공급가액(억)": "실제공급가액",
-                "예측공급가액(억)": "예측공급가액",
-                "설명": "설명"  # 필요 시 매핑 추가
+                "실제공급가액": "실제공급가액",
+                "예측공급가액": "예측공급가액",
+                "설명": "설명"
             },
             "age_group_sales": {
                 "공급가액": "실제공급가액",
                 "예측공급가액": "예측공급가액",
-                "설명": "설명"  # 필요 시 매핑 추가
+                "설명": "설명"
             },
             # 'category_sales' 섹션은 이미 '실제공급가액', '예측공급가액', '설명'을 사용하므로 추가 매핑 필요 없음
         }
@@ -127,6 +147,9 @@ def generate_json_from_excel(year=None):
                             new_std = new.replace(' ', '').lower()
                             if original_std in df.columns:
                                 df = df.rename(columns={original_std: new_std})
+                                print(f"[DEBUG] Column '{original_std}' renamed to '{new_std}'")
+                            else:
+                                print(f"[WARNING] 매핑하려는 원본 열 '{original_std}'이(가) 데이터프레임에 존재하지 않습니다.")
 
                     # 필요한 열 이름도 표준화
                     standardized_required_columns = [col.replace(' ', '').lower() for col in required_columns]
@@ -150,6 +173,12 @@ def generate_json_from_excel(year=None):
                     else:
                         raise ValueError(f"{name} 섹션에서 그룹 열 '{group_col}'을(를) 찾을 수 없습니다.")
 
+                    # 디버깅: '설명' 필드 출력
+                    if '설명' in df.columns:
+                        print(f"[DEBUG] '설명' 필드 내용: {df['설명'].tolist()}")
+                    else:
+                        print(f"[DEBUG] '설명' 필드가 데이터프레임에 존재하지 않습니다.")
+
                     if year and year.lower() == "all":
                         total_sums = {}
                         for col in sum_cols:  # 숫자형 컬럼 합계 계산
@@ -163,21 +192,26 @@ def generate_json_from_excel(year=None):
                             if col not in sum_cols and col != group_col_std:
                                 if col in df.columns:
                                     # '설명' 열의 경우, 전체 설명을 하나로 합칠 수 있습니다.
-                                    total_row[col] = '; '.join(df[col].dropna().unique())
+                                    descriptions = df[col].dropna().unique()
+                                    descriptions = [desc for desc in descriptions if desc != 'N/A']
+                                    total_row[col] = '; '.join(descriptions) if len(descriptions) > 0 else 'N/A'
                                 else:
                                     total_row[col] = 'N/A'
-                        df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
-                        # "전체" 행만 유지
-                        df = df[df[group_col_std] == '전체']
+                        df_total = pd.DataFrame([total_row])
+                        print(f"[DEBUG] '전체' 행 내용: {df_total.to_dict(orient='records')}")
+                        # '전체' 행만 유지
+                        df = df_total
                         print(f"[DEBUG] '{name}' 섹션에서 '전체' 행 추가 및 필터링 완료.")
                     else:
                         print(f"[DEBUG] '{name}' 섹션에서 연도별 데이터 유지.")
 
-                    print(f"[DEBUG] Columns before selecting required columns ({name}): {df.columns.tolist()} (총 {len(df.columns)}개)")
+                    print(
+                        f"[DEBUG] Columns before selecting required columns ({name}): {df.columns.tolist()} (총 {len(df.columns)}개)")
 
                     # 필요한 열만 선택
                     df = df[existing_required_columns]
-                    print(f"[DEBUG] Columns after selecting required columns ({name}): {df.columns.tolist()} (총 {len(df.columns)}개)")
+                    print(
+                        f"[DEBUG] Columns after selecting required columns ({name}): {df.columns.tolist()} (총 {len(df.columns)}개)")
 
                     # NaN 값을 'N/A'로 대체
                     df = df.fillna('N/A')
@@ -186,13 +220,7 @@ def generate_json_from_excel(year=None):
                     numeric_columns = []
                     if name == "summary":
                         numeric_columns = sum_cols
-                    elif name == "category_sales":
-                        numeric_columns = ['실제공급가액', '예측공급가액']
-                    elif name == "gender_sales":
-                        numeric_columns = ['실제공급가액', '예측공급가액']
-                    elif name == "age_group_sales":
-                        numeric_columns = ['실제공급가액', '예측공급가액']
-                    elif name == "vip_sales":
+                    elif name in ["category_sales", "gender_sales", "age_group_sales", "vip_sales"]:
                         numeric_columns = ['실제공급가액', '예측공급가액']
                     elif name == "area_sales":
                         numeric_columns = ['공급가액', '예측공급가액']
@@ -205,6 +233,9 @@ def generate_json_from_excel(year=None):
 
                     # JSON 변환
                     final_json[name] = df.to_dict(orient='records')
+
+                    # 디버깅: 처리된 데이터 출력
+                    print(f"[DEBUG] 처리된 '{name}' 섹션 데이터: {final_json[name]}")
 
                 except Exception as e:
                     print(f"[ERROR] {name} 섹션 처리 중 오류 발생: {str(e)}")
@@ -230,6 +261,9 @@ def generate_json_from_excel(year=None):
         # 결과 반환
         return final_json
 
+    # 함수 호출 예시
+    # generate_json_from_excel(year="all")
+
     except Exception as e:
-        print(f"[ERROR] Exception in generate_json_from_excel: {str(e)}")
+        print(f"[ERROR] Exception in generate_json_from_excel: {e}")
         raise

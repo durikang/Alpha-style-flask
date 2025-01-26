@@ -215,86 +215,119 @@ def plot_year_with_prediction(historical_year, historical_data, future_data, out
 
     save_plotly_fig(fig, html_file, png_file)
 
+def add_2025_predictions(net_profit):
+    """
+    net_profit 데이터프레임에 선형회귀를 사용해 2025년 예측 데이터를 추가합니다.
+    """
+    net_profit = net_profit.copy()
+    net_profit['년도'] = net_profit['년도'].astype(int)
+
+    # 숫자형 변환 및 NaN 처리
+    for col in ['매출', '판관비', '당기순이익']:
+        if col in net_profit.columns:
+            net_profit[col] = pd.to_numeric(net_profit[col], errors='coerce').fillna(0)
+
+    # 선형회귀 모델 생성
+    lr = LinearRegression()
+
+    # 새로운 데이터 저장용 리스트
+    predictions = {'년도': [2025]}
+
+    for col in ['매출', '판관비', '당기순이익']:
+        if col in net_profit.columns:
+            # X, y 설정
+            X = net_profit[['년도']].values
+            y = net_profit[col].values
+
+            # y 값에 NaN이 없는지 확인
+            if len(y) > 1 and not np.isnan(y).any():
+                lr.fit(X, y)
+                pred_2025 = lr.predict([[2025]])[0]
+                predictions[col] = [pred_2025]
+
+    # 새로운 예측 데이터를 DataFrame으로 추가
+    predictions_df = pd.DataFrame(predictions)
+    net_profit = pd.concat([net_profit, predictions_df], ignore_index=True)
+
+    return net_profit
+
 
 def plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_png):
     """
-    net_profit에 (년도, 매출, 판관비, 당기순이익, 예측매출, 예측판관비, 예측당기순이익) 모두 있으면,
-    - 실제 데이터를 라인
-    - 예측 데이터를 다이아몬드 등으로
+    net_profit에 2025년 예측 데이터를 포함해 그래프를 그리고,
+    모든 데이터(매출, 판관비, 당기순이익)에 대해 2024-2025는 점선으로 연결합니다.
     """
-    fig = go.Figure()
+    try:
+        # 2025년 예측 데이터 추가
+        net_profit = add_2025_predictions(net_profit)
 
-    # 억단위로 변환 편의
-    net_profit = net_profit.copy()
-    for col in ['매출', '판관비', '당기순이익', '예측매출', '예측판관비', '예측당기순이익']:
-        if col in net_profit.columns:
-            net_profit[col] = net_profit[col] / 1e8
+        # 억 단위 변환
+        for col in ['매출', '판관비', '당기순이익']:
+            if col in net_profit.columns:
+                net_profit[col] = net_profit[col] / 1e8
 
-    years = net_profit['년도'].unique()
-    net_profit.sort_values('년도', inplace=True)
+        # 그래프 생성
+        fig = go.Figure()
 
-    # 실제
-    fig.add_trace(go.Scatter(
-        x=net_profit['년도'],
-        y=net_profit['매출'],
-        mode='lines+markers',
-        name='매출(실제)',
-        line=dict(color='red')
-    ))
-    fig.add_trace(go.Scatter(
-        x=net_profit['년도'],
-        y=net_profit['판관비'],
-        mode='lines+markers',
-        name='판관비(실제)',
-        line=dict(color='blue')
-    ))
-    fig.add_trace(go.Scatter(
-        x=net_profit['년도'],
-        y=net_profit['당기순이익'],
-        mode='lines+markers',
-        name='당기순이익(실제)',
-        line=dict(color='green')
-    ))
+        # 실제 데이터: 2020~2024년
+        for col, color, name in zip(['매출', '판관비', '당기순이익'],
+                                    ['red', 'blue', 'green'],
+                                    ['매출', '판관비', '당기순이익']):
+            # 실제 데이터 (2020~2024)
+            fig.add_trace(go.Scatter(
+                x=net_profit.loc[net_profit['년도'] <= 2024, '년도'],
+                y=net_profit.loc[net_profit['년도'] <= 2024, col],
+                mode='lines+markers',
+                name=f'{name}(실제)',
+                line=dict(color=color)
+            ))
 
-    # 예측
-    if '예측매출' in net_profit.columns:
-        fig.add_trace(go.Scatter(
-            x=net_profit['년도'],
-            y=net_profit['예측매출'],
-            mode='markers+lines',
-            name='매출(예측)',
-            line=dict(dash='dot', color='red'),
-            marker=dict(symbol='diamond', size=8, color='red')
-        ))
-    if '예측판관비' in net_profit.columns:
-        fig.add_trace(go.Scatter(
-            x=net_profit['년도'],
-            y=net_profit['예측판관비'],
-            mode='markers+lines',
-            name='판관비(예측)',
-            line=dict(dash='dot', color='blue'),
-            marker=dict(symbol='diamond', size=8, color='blue')
-        ))
-    if '예측당기순이익' in net_profit.columns:
-        fig.add_trace(go.Scatter(
-            x=net_profit['년도'],
-            y=net_profit['예측당기순이익'],
-            mode='markers+lines',
-            name='당기순이익(예측)',
-            line=dict(dash='dot', color='green'),
-            marker=dict(symbol='diamond', size=8, color='green')
-        ))
+            # 2024-2025 점선 연결
+            if 2024 in net_profit['년도'].values and 2025 in net_profit['년도'].values:
+                try:
+                    x_values = [2024, 2025]
+                    y_values = [
+                        net_profit.loc[net_profit['년도'] == 2024, col].values[0],
+                        net_profit.loc[net_profit['년도'] == 2025, col].values[0]
+                    ]
+                    fig.add_trace(go.Scatter(
+                        x=x_values,
+                        y=y_values,
+                        mode='lines+markers',
+                        name=f'{name}(예측)',
+                        line=dict(dash='dot', color=color),
+                        marker=dict(symbol='diamond', size=8, color=color)
+                    ))
+                except IndexError:
+                    print(f"[WARN] 2025년 {name} 데이터가 누락되었습니다.")
 
-    fig.update_layout(
-        title="전체 재무데이터 (실제+예측)",
-        xaxis_title="년도",
-        yaxis_title="금액 (억)",
-        hovermode='x unified'
-    )
+        # 그래프 레이아웃 설정
+        fig.update_layout(
+            title="전체 재무데이터 (2025년 예측 추가)",
+            xaxis_title="년도",
+            yaxis_title="금액 (억)",
+            hovermode='x unified',
+            legend=dict(
+                orientation="h",  # 가로 방향으로 설정
+                yanchor="bottom",  # Y축 기준 하단 정렬
+                y=-0.3,  # 그래프 하단으로 범례 위치 이동
+                xanchor="center",  # X축 기준 중앙 정렬
+                x=0.5  # 중앙에 배치
+            )
+        )
 
-    html_file = os.path.join(output_dir_html, "연도별_재무상태표.html")
-    png_file = os.path.join(output_dir_png, "연도별_재무상태표.png")
-    save_plotly_fig(fig, html_file, png_file)
+        # 저장
+        html_file = os.path.join(output_dir_html, "연도별_재무상태표.html")
+        png_file = os.path.join(output_dir_png, "연도별_재무상태표.png")
+        fig.write_html(html_file)
+        fig.write_image(png_file)
+
+        print(f"HTML 파일이 저장되었습니다: {html_file}")
+        print(f"PNG 파일이 저장되었습니다: {png_file}")
+
+    except Exception as e:
+        print(f"[ERROR] 그래프 생성 중 오류 발생: {e}")
+
 
 
 
@@ -444,14 +477,28 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
             print(f"그래프 생성 중 오류 발생: {e}")
 
     # Generate and save line chart for gender and predicted
+    # Generate and save line chart for gender and predicted
     try:
-        # Pivot both '공급가액' and '예측 공급가액' with observed=True to remove FutureWarning
+        # 선형 회귀를 사용해 2025년 데이터 예측
+        for gender in year_gender_spending['성별'].unique():
+            gender_data = year_gender_spending[year_gender_spending['성별'] == gender]
+            if len(gender_data) >= 2:
+                X = gender_data[['년도']].astype(int).values
+                y = gender_data['공급가액'].astype(float).values
+                lr = LinearRegression()
+                lr.fit(X, y)
+                pred_2025 = lr.predict([[2025]])[0]
+                year_gender_spending = pd.concat([
+                    year_gender_spending,
+                    pd.DataFrame({'년도': [2025], '성별': [gender], '공급가액': [None], '예측 공급가액': [pred_2025]})
+                ], ignore_index=True)
+
+        # Pivot actual '공급가액' and predicted '예측 공급가액'
         gender_pivot = year_gender_spending.pivot_table(
             index='년도',
             columns='성별',
             values=['공급가액', '예측 공급가액'],
-            aggfunc='sum',
-            observed=True  # 명시적으로 설정하여 FutureWarning 해결
+            aggfunc='sum'
         ).fillna(0)
 
         # Flatten the multi-level columns
@@ -472,18 +519,25 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         for gender in year_gender_spending['성별'].unique():
             actual_col = f"공급가액_{gender}"
             predicted_col = f"예측 공급가액_{gender}"
+
+            # Add actual data (2020~2024)
             if actual_col in gender_actual_plot.columns:
                 fig.add_trace(go.Scatter(
-                    x=gender_actual_plot.index.astype(int),
-                    y=gender_actual_plot[actual_col],
+                    x=gender_actual_plot.index[gender_actual_plot.index < 2025].astype(int),
+                    y=gender_actual_plot.loc[gender_actual_plot.index < 2025, actual_col],
                     mode='lines+markers',
                     name=f'{gender} 매출 (실제)',
                     line=dict(color=colors.get(gender, 'black'))
                 ))
-            if predicted_col in gender_predicted_plot.columns:
+
+            # Add predicted data (2025 as dotted line)
+            if predicted_col in gender_predicted_plot.columns and 2025 in gender_predicted_plot.index:
                 fig.add_trace(go.Scatter(
-                    x=gender_predicted_plot.index.astype(int),
-                    y=gender_predicted_plot[predicted_col],
+                    x=[2024, 2025],
+                    y=[
+                        gender_actual_plot.loc[2024, actual_col] if 2024 in gender_actual_plot.index else None,
+                        gender_predicted_plot.loc[2025, predicted_col]
+                    ],
                     mode='lines+markers',
                     name=f'{gender} 매출 (예측)',
                     line=dict(dash='dot', color=colors.get(gender, 'black')),
@@ -491,21 +545,21 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
                 ))
 
         fig.update_layout(
-            title='연도별 성별 매출 (실제 + 예측)',
+            title='연도별 성별 매출 (실제 + 2025 예측)',
             xaxis_title='년도',
             yaxis_title='금액 (억 단위)',
             font=dict(family="Arial, sans-serif", size=12),
             legend=dict(orientation="h", y=-0.2),
         )
 
-        # Save line chart
+        # Save updated line chart
         html_file = os.path.join(output_dir_html, "연도별_성별_매출.html")
         png_file = os.path.join(output_dir_png, "연도별_성별_매출.png")
         save_plotly_fig(fig, html_file, png_file)
-
+        print(f"성별 매출 라인 차트 저장 완료 (2025 예측 포함): {html_file}, {png_file}")
 
     except Exception as e:
-        print(f"Gender 분석 중 오류 발생: {e}")
+        print(f"[ERROR] 예측 그래프 생성 중 오류 발생: {e}")
 
 
 # ----------------------------
@@ -668,15 +722,27 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
     except Exception as e:
         print(f"그래프 생성 중 오류 발생: {e}")
 
-    # Generate and save line chart for age groups and predicted
     try:
-        # Pivot both '공급가액' and '예측 공급가액' with observed=True to remove FutureWarning
+        # 선형 회귀를 사용해 2025년 데이터 예측
+        for age_group in year_age_spending['나이대'].unique():
+            age_data = year_age_spending[year_age_spending['나이대'] == age_group]
+            if len(age_data) >= 2:
+                X = age_data[['년도']].astype(int).values
+                y = age_data['공급가액'].astype(float).values
+                lr = LinearRegression()
+                lr.fit(X, y)
+                pred_2025 = lr.predict([[2025]])[0]
+                year_age_spending = pd.concat([
+                    year_age_spending,
+                    pd.DataFrame({'년도': [2025], '나이대': [age_group], '공급가액': [None], '예측 공급가액': [pred_2025]})
+                ], ignore_index=True)
+
+        # Pivot actual '공급가액' and predicted '예측 공급가액'
         age_pivot = year_age_spending.pivot_table(
             index='년도',
             columns='나이대',
             values=['공급가액', '예측 공급가액'],
-            aggfunc='sum',
-            observed=True  # 명시적으로 설정하여 FutureWarning 해결
+            aggfunc='sum'
         ).fillna(0)
 
         # Flatten the multi-level columns
@@ -693,22 +759,30 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         # Plot actual and predicted
         fig = go.Figure()
         colors = {age_group: color for age_group, color in
-                  zip(year_age_spending['나이대'].unique(), ['blue', 'red', 'green', 'yellow'])}
+                  zip(year_age_spending['나이대'].unique(), ['blue', 'red', 'green', 'yellow', 'purple', 'orange'])}
+
         for age_group in year_age_spending['나이대'].unique():
             actual_col = f"공급가액_{age_group}"
             predicted_col = f"예측 공급가액_{age_group}"
+
+            # Add actual data (2020~2024)
             if actual_col in age_actual_plot.columns:
                 fig.add_trace(go.Scatter(
-                    x=age_actual_plot.index.astype(int),
-                    y=age_actual_plot[actual_col],
+                    x=age_actual_plot.index[age_actual_plot.index < 2025].astype(int),
+                    y=age_actual_plot.loc[age_actual_plot.index < 2025, actual_col],
                     mode='lines+markers',
                     name=f'{age_group} 매출 (실제)',
                     line=dict(color=colors.get(age_group, 'black'))
                 ))
-            if predicted_col in age_predicted_plot.columns:
+
+            # Add predicted data (2025 as dotted line)
+            if predicted_col in age_predicted_plot.columns and 2025 in age_predicted_plot.index:
                 fig.add_trace(go.Scatter(
-                    x=age_predicted_plot.index.astype(int),
-                    y=age_predicted_plot[predicted_col],
+                    x=[2024, 2025],
+                    y=[
+                        age_actual_plot.loc[2024, actual_col] if 2024 in age_actual_plot.index else None,
+                        age_predicted_plot.loc[2025, predicted_col]
+                    ],
                     mode='lines+markers',
                     name=f'{age_group} 매출 (예측)',
                     line=dict(dash='dot', color=colors.get(age_group, 'black')),
@@ -716,7 +790,7 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 ))
 
         fig.update_layout(
-            title='연도별 연령대별 매출 (실제 + 예측)',
+            title='연도별 연령대별 매출 (실제 + 2025 예측)',
             xaxis_title='년도',
             yaxis_title='금액 (억 단위)',
             font=dict(family="Arial, sans-serif", size=12),
@@ -727,9 +801,10 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
         png_file = os.path.join(output_dir_png, "연도별_나이대별_매출.png")
         save_plotly_fig(fig, html_file, png_file)
+        print(f"연령대별 매출 라인 차트 저장 완료 (2025 예측 포함): {html_file}, {png_file}")
 
     except Exception as e:
-        print(f"Age Group 분석 중 오류 발생: {e}")
+        print(f"[ERROR] 예측 그래프 생성 중 오류 발생: {e}")
 
 
 # ----------------------------
