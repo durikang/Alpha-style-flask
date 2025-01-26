@@ -515,7 +515,7 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         # Plot actual and predicted
         fig = go.Figure()
         colors = {gender: color for gender, color in
-                  zip(year_gender_spending['성별'].unique(), ['blue', 'red', 'green', 'yellow', 'purple', 'orange'])}
+                  zip(year_gender_spending['성별'].unique(), ['blue', 'red'])}
         for gender in year_gender_spending['성별'].unique():
             actual_col = f"공급가액_{gender}"
             predicted_col = f"예측 공급가액_{gender}"
