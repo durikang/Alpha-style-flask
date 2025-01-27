@@ -1,0 +1,11 @@
+# PyCharm 프로젝트 설정 폴더
+.idea/
+
+# Python 관련
+__pycache__/
+*.py[cod]
+*.pyo
+
+# 환경 설정
+.env
+.venv
