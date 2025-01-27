@@ -1696,7 +1696,7 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                     supply_value = row['공급가액']
                     if region_code in region_coordinates:
                         lat, lon = region_coordinates[region_code]
-                        bubble_size = max(supply_value / 1e7, 1)
+                        bubble_size = max(supply_value / 1e6, 1)
                         folium.CircleMarker(
                             location=[lat, lon],
                             radius=bubble_size,
@@ -1836,7 +1836,7 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 supply_value = row['공급가액']
                 if region_code in region_coordinates:
                     lat, lon = region_coordinates[region_code]
-                    bubble_size = max(supply_value / 1e8, 1)
+                    bubble_size = max(supply_value / 5e6, 1)
                     folium.CircleMarker(
                         location=[lat, lon],
                         radius=bubble_size,
