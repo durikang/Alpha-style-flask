@@ -1897,7 +1897,7 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 다음_연도 = 지역_data['년도'].max() + 1
                 예측값 = model.predict([[다음_연도]])[0]
                 combined_top5_df.loc[combined_top5_df['지역'] == 지역, '예측공급가액'] = 예측값
-
+#
             # 예측값과 공급가액 합산
             combined_top5_df['예측공급가액'] += combined_top5_df['공급가액']
 
