@@ -133,8 +133,6 @@ def generate_json_from_excel(year=None):
             if os.path.exists(file_path):
                 try:
                     df = pd.read_excel(file_path)
-                    print(f"[DEBUG] Processing file: {file_path}")
-                    print(f"[DEBUG] Columns before processing ({name}): {df.columns.tolist()} (총 {len(df.columns)}개)")
 
                     # 열 이름 표준화: 공백 제거 및 소문자 변환
                     df.columns = df.columns.str.replace(' ', '').str.lower()
@@ -148,8 +146,6 @@ def generate_json_from_excel(year=None):
                             if original_std in df.columns:
                                 df = df.rename(columns={original_std: new_std})
                                 print(f"[DEBUG] Column '{original_std}' renamed to '{new_std}'")
-                            else:
-                                print(f"[WARNING] 매핑하려는 원본 열 '{original_std}'이(가) 데이터프레임에 존재하지 않습니다.")
 
                     # 필요한 열 이름도 표준화
                     standardized_required_columns = [col.replace(' ', '').lower() for col in required_columns]
@@ -160,7 +156,6 @@ def generate_json_from_excel(year=None):
                     missing_columns = [col for col in standardized_required_columns if col not in df.columns]
 
                     if missing_columns:
-                        print(f"[WARNING] {name} 섹션에 필요한 열이 누락되었습니다: {missing_columns}")
                         # 누락된 열을 'N/A'로 채우기
                         for col in missing_columns:
                             df[col] = 'N/A'
@@ -170,14 +165,10 @@ def generate_json_from_excel(year=None):
                     # 그룹 열 표준화
                     if group_col_std in df.columns:
                         df[group_col_std] = df[group_col_std].astype(str).str.strip()
-                    else:
-                        raise ValueError(f"{name} 섹션에서 그룹 열 '{group_col}'을(를) 찾을 수 없습니다.")
 
                     # 디버깅: '설명' 필드 출력
                     if '설명' in df.columns:
                         print(f"[DEBUG] '설명' 필드 내용: {df['설명'].tolist()}")
-                    else:
-                        print(f"[DEBUG] '설명' 필드가 데이터프레임에 존재하지 않습니다.")
 
                     if year and year.lower() == "all":
                         total_sums = {}
@@ -198,20 +189,11 @@ def generate_json_from_excel(year=None):
                                 else:
                                     total_row[col] = 'N/A'
                         df_total = pd.DataFrame([total_row])
-                        print(f"[DEBUG] '전체' 행 내용: {df_total.to_dict(orient='records')}")
                         # '전체' 행만 유지
                         df = df_total
-                        print(f"[DEBUG] '{name}' 섹션에서 '전체' 행 추가 및 필터링 완료.")
-                    else:
-                        print(f"[DEBUG] '{name}' 섹션에서 연도별 데이터 유지.")
-
-                    print(
-                        f"[DEBUG] Columns before selecting required columns ({name}): {df.columns.tolist()} (총 {len(df.columns)}개)")
 
                     # 필요한 열만 선택
                     df = df[existing_required_columns]
-                    print(
-                        f"[DEBUG] Columns after selecting required columns ({name}): {df.columns.tolist()} (총 {len(df.columns)}개)")
 
                     # NaN 값을 'N/A'로 대체
                     df = df.fillna('N/A')
@@ -235,7 +217,6 @@ def generate_json_from_excel(year=None):
                     final_json[name] = df.to_dict(orient='records')
 
                     # 디버깅: 처리된 데이터 출력
-                    print(f"[DEBUG] 처리된 '{name}' 섹션 데이터: {final_json[name]}")
 
                 except Exception as e:
                     print(f"[ERROR] {name} 섹션 처리 중 오류 발생: {str(e)}")
@@ -253,7 +234,6 @@ def generate_json_from_excel(year=None):
             with open(output_file, 'w', encoding='utf-8') as json_file:
                 json.dump(final_json, json_file, ensure_ascii=False, indent=4)
 
-            print(f"[DEBUG] JSON 파일 저장 완료: {output_file}")
         except Exception as e:
             print(f"[ERROR] JSON 파일 저장 중 오류 발생: {str(e)}")
             raise

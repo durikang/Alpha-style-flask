@@ -47,7 +47,6 @@ def save_excel(dataframe, path):
                 adjusted_width = max(max_length, len(column)) + 2
                 col_letter = get_column_letter(idx)
                 worksheet.column_dimensions[col_letter].width = adjusted_width
-        print(f"엑셀 파일이 저장되었습니다: {path}")
     except Exception as e:
         print(f"엑셀 파일 저장 중 오류 발생: {e}")
 
@@ -58,10 +57,8 @@ def save_plotly_fig(fig, html_path, png_path, width=1800, height=1170):
     """
     try:
         fig.write_html(html_path)
-        print(f"HTML 파일이 저장되었습니다: {html_path}")
         try:
             fig.write_image(png_path, width=width, height=height)
-            print(f"PNG 파일이 저장되었습니다: {png_path}")
         except Exception as e:
             print(f"PNG 파일 저장 중 오류 발생: {e}")
     except Exception as e:
@@ -141,7 +138,6 @@ ORDER BY
     except Exception as e:
         print(f"데이터베이스 연결 또는 데이터 조회 중 오류 발생: {e}")
         raise
-
 
 # ----------------------------
 # Financial Metrics Calculation
@@ -322,9 +318,6 @@ def plot_full_prediction_with_actuals(net_profit, output_dir_html, output_dir_pn
         fig.write_html(html_file)
         fig.write_image(png_file)
 
-        print(f"HTML 파일이 저장되었습니다: {html_file}")
-        print(f"PNG 파일이 저장되었습니다: {png_file}")
-
     except Exception as e:
         print(f"[ERROR] 그래프 생성 중 오류 발생: {e}")
 
@@ -414,7 +407,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
     # 데이터 Excel로 저장
     gender_output = os.path.join(output_dir_xlsx, "성별별_판매량.xlsx")
     total_by_gender.to_excel(gender_output, index=False)
-    print(f"성별별 전체 매출 데이터 Excel 파일 저장 완료: {gender_output}")
 
     # Generate and save pie charts and Excel files for each year including predictions
     for year in sorted(year_gender_spending['년도'].dropna().unique()):
@@ -425,7 +417,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         os.makedirs(year_dir_html, exist_ok=True)
         os.makedirs(year_dir_png, exist_ok=True)
         os.makedirs(year_dir_xlsx, exist_ok=True)  # Ensure Excel directory exists
-        print(year_dir_html, year_dir_png, year_dir_xlsx)
 
         # 현재 루프에서 year_data를 정의
         year_data = year_gender_spending[year_gender_spending['년도'] == year].copy()
@@ -444,7 +435,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         year_excel_output = os.path.join(year_dir_xlsx, f"{year}_성별_매출.xlsx")
         try:
             save_excel(year_data, year_excel_output)
-            print(f"{year}년 성별 매출 데이터 Excel 파일 저장 완료: {year_excel_output}")
         except Exception as e:
             print(f"Excel 파일 저장 중 오류 발생: {e}")
 
@@ -472,7 +462,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
             html_file = os.path.join(year_dir_html, f"{year}_성별_매출.html")
             png_file = os.path.join(year_dir_png, f"{year}_성별_매출.png")
             save_plotly_fig(fig, html_file, png_file)
-            print(f"{year}년 성별 매출 그래프 저장 완료: {html_file}, {png_file}")
         except Exception as e:
             print(f"그래프 생성 중 오류 발생: {e}")
 
@@ -556,7 +545,6 @@ def analyze_gender(merged_data, oracle_data, output_dir_xlsx, output_dir_html, o
         html_file = os.path.join(output_dir_html, "연도별_성별_매출.html")
         png_file = os.path.join(output_dir_png, "연도별_성별_매출.png")
         save_plotly_fig(fig, html_file, png_file)
-        print(f"성별 매출 라인 차트 저장 완료 (2025 예측 포함): {html_file}, {png_file}")
 
     except Exception as e:
         print(f"[ERROR] 예측 그래프 생성 중 오류 발생: {e}")
@@ -658,7 +646,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         # 데이터 Excel로 저장
         age_output = os.path.join(output_dir_xlsx, "나이대별_판매량.xlsx")
         total_by_age_group.to_excel(age_output, index=False)
-        print(f"연령대별 전체 매출 데이터 Excel 파일 저장 완료: {age_output}")
 
         # 11. 연도별 파이 차트 및 Excel 저장
         for year in sorted(year_age_spending['년도'].dropna().unique()):
@@ -670,7 +657,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 os.makedirs(year_dir_html, exist_ok=True)
                 os.makedirs(year_dir_png, exist_ok=True)
                 os.makedirs(year_dir_xlsx, exist_ok=True)
-                print(f"Directories 생성 완료: {year_dir_html}, {year_dir_png}, {year_dir_xlsx}")
 
                 # 현재 연도 데이터 추출
                 current_year_data = year_age_spending[year_age_spending['년도'] == year].copy()
@@ -688,7 +674,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                 # Excel 저장
                 year_excel_output = os.path.join(year_dir_xlsx, f"{year}_나이대별_판매량.xlsx")
                 save_excel(current_year_data, year_excel_output)
-                print(f"{year}년 연령대별 매출 데이터 Excel 파일 저장 완료: {year_excel_output}")
 
                 # 원형 그래프 생성 및 저장
                 try:
@@ -714,7 +699,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
                     html_file = os.path.join(year_dir_html, f"{year}_나이대별_매출.html")
                     png_file = os.path.join(year_dir_png, f"{year}_나이대별_매출.png")
                     save_plotly_fig(fig, html_file, png_file)
-                    print(f"{year}년 연령대별 원형 그래프 저장 완료: {html_file}, {png_file}")
                 except Exception as e:
                     print(f"그래프 생성 중 오류 발생: {e}")
             except Exception as e:
@@ -801,7 +785,6 @@ def analyze_age_group(merged_data, oracle_data, output_dir_xlsx, output_dir_html
         html_file = os.path.join(output_dir_html, "연도별_나이대별_매출.html")
         png_file = os.path.join(output_dir_png, "연도별_나이대별_매출.png")
         save_plotly_fig(fig, html_file, png_file)
-        print(f"연령대별 매출 라인 차트 저장 완료 (2025 예측 포함): {html_file}, {png_file}")
 
     except Exception as e:
         print(f"[ERROR] 예측 그래프 생성 중 오류 발생: {e}")
@@ -818,11 +801,9 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
     try:
         # (1) 매출 데이터 추출
         sales_data = merged_data[merged_data['매입매출구분(1-매출/2-매입)'] == 1].copy()
-        print("매출 데이터 추출 완료.")
 
         min_year_cat = sales_data['년도'].min()
         max_year_cat = sales_data['년도'].max()
-        print(f"카테고리별 분석을 위한 연도 범위: {min_year_cat} ~ {max_year_cat}")
 
         # 카테고리별 (년도, 품목→카테고리, 공급가액) 집계
         oracle_item.columns = ["품명", "SUB_ID", "카테고리"]  # 컬럼 이름 재정의
@@ -834,30 +815,23 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             .merge(oracle_item[['품명', '카테고리']], on='품명', how='left')
         )
         merged_cat_df['카테고리'] = merged_cat_df['카테고리'].fillna('미분류')
-        print("카테고리별 집계 완료.")
 
         # 년도+카테고리별 집계
         merged_cat_df = merged_cat_df.groupby(['년도', '카테고리'])['공급가액'].sum().reset_index()
-        print("년도 및 카테고리별 공급가액 집계 완료.")
 
         # 전체 연도 범위
         all_years = sorted(merged_cat_df['년도'].unique())  # 예: [2020, 2021, 2022, 2023, 2024]
-        print(f"전체 연도: {all_years}")
         final_list = []
 
         # 2) 카테고리별 (올해 → 내년) 예측
         cat_list = merged_cat_df['카테고리'].unique()
-        print(f"분석할 카테고리 목록: {cat_list}")
 
         for cat in cat_list:
-            print(f"카테고리 '{cat}' 분석 시작.")
             cat_data = merged_cat_df[merged_cat_df['카테고리'] == cat].copy()
             cat_data.sort_values('년도', inplace=True)
-            print(f"카테고리 '{cat}' 데이터:\n{cat_data}")
 
             # 선형 회귀로 카테고리별 데이터를 학습
             if len(cat_data) < 2:
-                print(f"카테고리 '{cat}'의 데이터가 부족하여 예측을 수행하지 않습니다.")
                 for y in all_years:
                     row_ = cat_data[cat_data['년도'] == y]
                     if len(row_) > 0:
@@ -879,7 +853,6 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             y_val = cat_data['공급가액'].values
             lr = LinearRegression()
             lr.fit(X, y_val)
-            print(f"카테고리 '{cat}'에 대한 선형 회귀 모델 학습 완료.")
 
             for y in all_years:
                 # 실제 값
@@ -898,10 +871,8 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
                     '실제공급가액': real_val,
                     '예측공급가액': next_pred
                 })
-            print(f"카테고리 '{cat}'에 대한 예측 완료.")
 
         cat_df_final = pd.DataFrame(final_list)
-        print("카테고리별 예측 데이터프레임 생성 완료.")
 
         # wide pivot 생성
         pivot_actual = cat_df_final.pivot_table(
@@ -918,26 +889,21 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             aggfunc='first'
         ).fillna(0)
         pivot_pred.columns = ['예측' + c for c in pivot_pred.columns]
-        print("실제 및 예측 데이터 pivot 완료.")
 
         # 실제와 예측 데이터 병합
         cat_wide = pd.concat([pivot_actual, pivot_pred], axis=1)
         cat_wide.reset_index(inplace=True)
-        print("실제 및 예측 데이터 병합 완료.")
 
         # 컬럼 정렬
         actual_cats = pivot_actual.columns.tolist()
         pred_cats = pivot_pred.columns.tolist()
         final_cols = ['년도'] + actual_cats + pred_cats
-        print(f"최종 컬럼 목록: {final_cols}")
 
         # 실제 존재하는지 체크
         final_cols = [c for c in final_cols if c in cat_wide.columns]
         cat_wide = cat_wide[final_cols]
-        print("데이터프레임 컬럼 정렬 완료.")
 
         # --------- 1. 년도별 카테고리별 예측 Excel 파일 저장 ---------
-        print("년도별 카테고리별 예측 Excel 파일 저장 시작.")
         for year in all_years:
             year = int(year)
             year_dir_html = os.path.join(output_dir_html, str(year))
@@ -949,7 +915,6 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
 
             year_df = cat_wide[cat_wide['년도'] == year].copy()
             if year_df.empty:
-                print(f"{year}년에 대한 데이터가 없어 Excel 파일을 생성하지 않습니다.")
                 continue
 
             # Melt the DataFrame to have '카테고리', '실제공급가액', '예측공급가액'
@@ -972,7 +937,6 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
             combined.loc[combined.index[0], '설명'] = description
 
             # Debugging: 출력해보기
-            print(f"{year}년 데이터 확인:\n{combined}")
 
             # Save to Excel
             excel_filename = f"{year}_카테고리별_판매량.xlsx"  # 파일 이름에 '가로형' 추가
@@ -1012,18 +976,15 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
                 fig_year_html = os.path.join(year_dir_html, f"{year}_카테고리별_판매량.html")
                 fig_year_png = os.path.join(year_dir_png, f"{year}_카테고리별_판매량.png")
                 save_plotly_fig(fig_year, fig_year_html, fig_year_png)
-                print(f"{year}년 카테고리별 판매량 그래프 저장 완료: {fig_year_html}, {fig_year_png}")
 
             except Exception as e:
                 print(f"{year}년 카테고리별 그래프 생성 중 오류 발생: {e}")
 
-        print("전체 카테고리별 합산 데이터 생성 및 저장 시작.")
         # 모든 연도의 데이터를 합산
         sum_cat = cat_df_final.groupby('카테고리').agg({
             '실제공급가액': 'sum',
             '예측공급가액': 'sum'
         }).reset_index()
-        print(f"합산된 카테고리별 데이터:\n{sum_cat}")
 
         # 합산 데이터를 '카테고리별_판매량_예측.xlsx' 파일로 저장
         sum_cat['년도'] = "전체"  # 모든 데이터의 "년도" 값을 "전체"로 설정
@@ -1045,10 +1006,8 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
         # 합산 데이터를 '카테고리별_판매량_예측.xlsx' 파일로 저장
         sum_excel_path = os.path.join(output_dir_xlsx, "연도별_카테고리별_판매량.xlsx")
         save_excel(sum_cat, sum_excel_path)
-        print(f"카테고리별 전체 합산 데이터 Excel 파일 저장 완료: {sum_excel_path}")
 
         # --------- 3. 전체 카테고리별 합산 그래프 생성 ---------
-        print("전체 카테고리별 합산 그래프 생성 시작.")
         fig_sum = go.Figure()
 
         fig_sum.add_trace(go.Bar(
@@ -1078,7 +1037,6 @@ def analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html,
         sum_html_path = os.path.join(output_dir_html, "연도별_카테고리별_판매량.html")
         sum_png_path = os.path.join(output_dir_png, "연도별_카테고리별_판매량.png")
         save_plotly_fig(fig_sum, sum_html_path, sum_png_path)
-        print(f"카테고리별 전체 합산 그래프 저장 완료: {sum_html_path}, {sum_png_path}")
 
     except Exception as e:
         print(f"카테고리별 분석 중 오류 발생: {e}")
@@ -1207,7 +1165,6 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             df_excel_copy_file = df_excel.copy()
             df_excel_copy_file.insert(0, '년도', year)
             save_excel(df_excel_copy_file, excel_path)
-            print(f"{year}년 VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path}")
 
             # (A-4) 그래프
             try:
@@ -1357,7 +1314,6 @@ def analyze_vip_users(merged_data, oracle_data, output_dir_xlsx, output_dir_html
             df_excel_total_copy_file = df_excel_total.copy()
             try:
                 df_excel_total_copy_file.to_excel(excel_path_total, index=False)
-                print(f"전체(모든 연도 합산) VIP 유저 예측 데이터 Excel 파일 저장 완료: {excel_path_total}")
             except Exception as e:
                 print(f"Excel 파일 저장 중 오류 발생: {e}")
                 # (B-3) 그래프 (단일 그래프에 파랑 vs 노랑 + 10%,20%,30% 점선)
@@ -1594,7 +1550,6 @@ def save_map_as_png(html_file_path, png_file_path):
         time.sleep(2)  # Wait for the map to fully render
 
         driver.save_screenshot(png_file_path)
-        print(f"PNG saved at '{png_file_path}'")
     except Exception as e:
         print(f"맵을 PNG로 저장 중 오류 발생: {e}")
     finally:
@@ -1612,70 +1567,44 @@ def analyze_area(oracle_area, geo_file_path, region_data,
     Additionally, save matched and unmatched region codes to separate TXT files.
     """
     try:
-        print("analyze_area 함수가 호출되었습니다.")
 
         matched_regions = set()
         unmatched_regions = set()
-        print("Initialized matched_regions and unmatched_regions sets.")
 
-        print("지역코드 매핑 시작.")
         oracle_area['지역코드'] = oracle_area['지역'].map(region_data)
 
-        print("지역코드 정수형으로 변환 시작.")
         oracle_area['지역코드'] = oracle_area['지역코드'].dropna().astype(int).astype(str).str.zfill(5)
-        print(f"매핑된 지역코드: {oracle_area['지역코드'].unique()[:10]}")
 
         oracle_area['지역코드'] = oracle_area['지역코드'].fillna('NaN')
-        print("지역코드 매핑 완료.")
 
-        # 주석 처리된 print 문을 제거하거나 주석으로 남겨둡니다.
-        # print(oracle_area.columns)  # 여기 주석 처리 필요
-
-        print("매출 데이터 필터링 및 병합 시작.")
         merged_user_data = oracle_area.copy()
-        print(f"매출 데이터 필터링 완료. 병합된 데이터 개수: {len(merged_user_data)}")
 
-        print("GeoJSON 파일 로드 시작.")
         geo = load_geojson(geo_file_path)
         if geo is None:
-            print("GeoJSON 파일 로드 실패.")
             return
 
-        print("지역 좌표 매핑 시작.")
         region_coordinates = map_region_coordinates(geo)
         region_coordinates = {str(k).zfill(5): v for k, v in region_coordinates.items()}
-        print(f"지역 좌표 매핑 완료: {len(region_coordinates)} 지역.")
 
-        print("유저별 지역 및 연도별 공급가액 집계 시작.")
         merged_user_area = merged_user_data[['지역', '지역코드', '년도', '공급가액']]
         user_supply_sum = merged_user_area.groupby(['지역', '지역코드', '년도'])['공급가액'].sum().reset_index()
-        print(f"Aggregated user supply sum:\n{user_supply_sum.head()}")
 
         # 모든 연도를 확인
         unique_years = sorted(user_supply_sum['년도'].unique())
-        print(f"유니크한 년도들: {unique_years}")
 
         combined_top5_dict = {}
-        print("Initialized combined_top5_dict.")
 
-        print("지역코드 매칭 여부 확인 시작.")
         unique_region_codes = oracle_area['지역코드'].unique()
         for code in unique_region_codes:
             if code in region_coordinates:
                 matched_regions.add(code)
-                print(f"매칭 성공: {code}")
             else:
                 if code != 'NaN':
                     unmatched_regions.add(code)
-                    print(f"매칭 실패: {code}")
-        print("지역코드 매칭 여부 확인 완료.")
 
         for year in unique_years:
             try:
-                print(f"\n년도별 분석 시작: {year}")
                 year_data = user_supply_sum[user_supply_sum['년도'] == year]
-                print(f"년도 {year}의 데이터 개수: {len(year_data)}")
-                print(f"년도 {year}의 데이터 샘플:\n{year_data.head()}")
 
                 year_dir_html = os.path.join(output_dir_html, str(year))
                 year_dir_png = os.path.join(output_dir_png, str(year))
@@ -1685,11 +1614,8 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 os.makedirs(year_dir_png, exist_ok=True)
                 os.makedirs(year_dir_xlsx, exist_ok=True)
 
-                print(f"생성된 디렉토리: {year_dir_html}, {year_dir_png}, {year_dir_xlsx}")
-
                 map_center = [35.96, 127.1]
                 map_year = folium.Map(location=map_center, zoom_start=7, tiles='cartodbpositron')
-                print("Folium 맵 초기화 완료.")
 
                 for _, row in year_data.iterrows():
                     region_code = str(row['지역코드']).zfill(5)
@@ -1714,12 +1640,10 @@ def analyze_area(oracle_area, geo_file_path, region_data,
 
                 html_file_path = os.path.join(year_dir_html, f'{year}_지역별_판매량.html')
                 map_year.save(html_file_path)
-                print(f"Folium 맵 HTML 저장 완료: {html_file_path}")
 
                 png_file_path = os.path.join(year_dir_png, f'{year}_지역별_판매량.png')
                 try:
                     save_map_as_png(html_file_path, png_file_path)
-                    print(f"맵 PNG 저장 완료: {png_file_path}")
                 except Exception as e:
                     print(f"맵 PNG 저장 중 오류 발생: {e}")
 
@@ -1733,7 +1657,6 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                     on=['지역코드', '년도'],
                     suffixes=('', '_total')
                 )
-                print(f"상위 5개 지역에 대한 상세 데이터:\n{detailed_top5.head()}")
 
                 detailed_top5 = pd.merge(
                     detailed_top5,
@@ -1746,11 +1669,9 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 detailed_top5['지역'] = detailed_top5['지역_y']  # '지역_y'를 '지역'으로 통합
                 detailed_top5 = detailed_top5.drop(columns=['지역_x', '지역_y'])
 
-                print(f"'지역' 이름 포함 후 데이터:\n{detailed_top5.head()}")
 
                 top5_year_area = detailed_top5[['지역', '공급가액']].drop_duplicates()
                 sum_by_area = top5_year_area.groupby('지역').sum().reset_index().sort_values(by='공급가액', ascending=False)
-                print(f"지역별 공급가액 합산:\n{sum_by_area}")
 
                 top5_year_area = sum_by_area.head(5)
 
@@ -1770,7 +1691,6 @@ def analyze_area(oracle_area, geo_file_path, region_data,
 
                     if len(지역_data) < 2:
                         # 데이터가 부족하면 증가율 적용
-                        print(f"지역 {지역}: 데이터 부족으로 증가율 기반 예측")
                         최근_공급가액 = 지역_data['공급가액'].iloc[-1] if not 지역_data.empty else 0
                         증가율 = 1.1  # 10% 증가
                         top5_year_area.loc[top5_year_area['지역'] == 지역, '예측 공급가액'] = 최근_공급가액 * 증가율
@@ -1784,7 +1704,6 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                     다음_연도 = 지역_data['년도'].max() + 1
                     예측값 = model.predict([[다음_연도]])[0]
                     top5_year_area.loc[top5_year_area['지역'] == 지역, '예측 공급가액'] = 예측값
-                    print(f"지역 {지역}: {다음_연도}년 예측 공급가액 = {예측값}")
 
                 # 결과 저장
                 top5_year_area_with_year = top5_year_area.copy()
@@ -1792,7 +1711,6 @@ def analyze_area(oracle_area, geo_file_path, region_data,
 
                 # 조건문 추가: 2024년일 경우 예측값 += 공급가액
                 if year == 2024:
-                    print("2024년 데이터: 예측 공급가액에 공급가액 더하기")
                     top5_year_area_with_year['예측 공급가액'] += top5_year_area_with_year['공급가액']
 
                 # 디렉토리 생성 및 엑셀 저장
@@ -1812,12 +1730,10 @@ def analyze_area(oracle_area, geo_file_path, region_data,
                 with pd.ExcelWriter(excel_file_path, engine='xlsxwriter') as writer:
                     top5_year_area_with_year.to_excel(writer, sheet_name='상위5_집계', index=False)
 
-                print(f"{year}년 지역별 판매량 Excel 저장 완료 (예측 포함): {excel_file_path}")
 
 
                 combined_top5_dict[year] = top5_year_area_with_year.copy()
                 combined_top5_dict[year]['년도'] = year
-                print(f"combined_top5_dict에 년도 {year}의 데이터 추가 완료.")
 
             except Exception as e:
                 print(f"년도 {year} 처리 중 오류 발생: {e}")
@@ -1825,11 +1741,8 @@ def analyze_area(oracle_area, geo_file_path, region_data,
         # 전체 지역별 공급가액 집계
         try:
             user_supply_sum_total = merged_user_area.groupby(['지역코드'])['공급가액'].sum().reset_index()
-            print("전체 지역별 공급가액 집계 완료.")
-            print(f"전체 지역별 공급가액:\n{user_supply_sum_total.head()}")
 
             combined_map = folium.Map(location=[35.96, 127.1], zoom_start=7, tiles='cartodbpositron')
-            print("전체 지역용 Folium 맵 초기화 완료.")
 
             for _, row in user_supply_sum_total.iterrows():
                 region_code = str(row['지역코드']).zfill(5)
@@ -1852,12 +1765,10 @@ def analyze_area(oracle_area, geo_file_path, region_data,
 
             combined_html_path = os.path.join(output_dir_html, "연도별_지역별_판매량.html")
             combined_map.save(combined_html_path)
-            print(f"전체 지역별 Folium 맵 HTML 저장 완료: {combined_html_path}")
 
             combined_png_path = os.path.join(output_dir_png, "연도별_지역별_판매량.png")
             try:
                 save_map_as_png(combined_html_path, combined_png_path)
-                print(f"전체 지역별 맵 PNG 저장 완료: {combined_png_path}")
             except Exception as e:
                 print(f"전체 맵 PNG 저장 중 오류 발생: {e}")
             # 모든 연도 데이터를 병합
@@ -2032,7 +1943,6 @@ def process_all_analysis():
         combined_net_profit.loc[0, '설명'] = description  # 첫 번째 행에 설명 추가
 
         combined_net_profit.to_excel(financial_output_path, index=False)
-        print(f"전체 데이터를 포함한 Excel 저장 완료: {financial_output_path}")
 
         # Save yearly financial data
         for year in net_profit['년도'].unique():
@@ -2051,7 +1961,6 @@ def process_all_analysis():
 
             year_file_path = os.path.join(year_dir, f"{year}_재무지표.xlsx")
             year_data.to_excel(year_file_path, index=False)
-            print(f"{year}년 재무지표 저장 완료: {year_file_path}")
 
         # Perform various analyses
         analyze_category(merged_data, oracle_item, output_dir_xlsx, output_dir_html, output_dir_png)
@@ -2087,8 +1996,6 @@ def process_all_analysis():
             # if file_path.name == "master_data.xlsx":
             #     continue
 
-            print(f"[INFO] '{file_path.name}' 파일 처리 중...")
-
             # (a) 원본 파일 열기
             wb = load_workbook(file_path)
 
@@ -2104,9 +2011,8 @@ def process_all_analysis():
         # 4) 최종 워크북을 파일로 저장
         output_file_path = os.path.join(output_dir_xlsx, "엑셀데이터종합본.xlsx")
         master_wb.save(output_file_path)
-        print(f"[DONE] 모든 파일을 이어 붙인 결과가 '{output_dir_xlsx}' 에 저장되었습니다.")
 
-
+#
     except FileNotFoundError as e:
         print(e)
     return True, "모든 분석 작업이 완료되었습니다."

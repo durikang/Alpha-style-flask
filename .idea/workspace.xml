@@ -5,7 +5,95 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="900956ed-a649-4cb1-83ad-1ce79bffe255" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Alpha-style-flask.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Alpha-style-flask.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2020/2020_VIP_유저.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2020/2020_VIP_유저.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2020/2020_나이대별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2020/2020_나이대별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2020/2020_성별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2020/2020_성별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2020/2020_재무상태표.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2020/2020_재무상태표.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2020/2020_지역별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2020/2020_지역별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2020/2020_카테고리별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2020/2020_카테고리별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2021/2021_VIP_유저.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2021/2021_VIP_유저.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2021/2021_나이대별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2021/2021_나이대별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2021/2021_성별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2021/2021_성별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2021/2021_재무상태표.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2021/2021_재무상태표.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2021/2021_지역별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2021/2021_지역별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2021/2021_카테고리별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2021/2021_카테고리별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2022/2022_VIP_유저.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2022/2022_VIP_유저.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2022/2022_나이대별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2022/2022_나이대별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2022/2022_성별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2022/2022_성별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2022/2022_재무상태표.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2022/2022_재무상태표.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2022/2022_지역별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2022/2022_지역별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2022/2022_카테고리별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2022/2022_카테고리별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2023/2023_VIP_유저.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2023/2023_VIP_유저.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2023/2023_나이대별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2023/2023_나이대별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2023/2023_성별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2023/2023_성별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2023/2023_재무상태표.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2023/2023_재무상태표.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2023/2023_지역별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2023/2023_지역별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2023/2023_카테고리별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2023/2023_카테고리별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2024/2024_VIP_유저.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2024/2024_VIP_유저.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2024/2024_나이대별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2024/2024_나이대별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2024/2024_성별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2024/2024_성별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2024/2024_재무상태표.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2024/2024_재무상태표.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2024/2024_지역별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2024/2024_지역별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/2024/2024_카테고리별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/2024/2024_카테고리별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/연도별_VIP_유저.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/연도별_VIP_유저.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/연도별_나이대별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/연도별_나이대별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/연도별_성별_매출.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/연도별_성별_매출.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/연도별_재무상태표.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/연도별_재무상태표.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/연도별_지역별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/연도별_지역별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/html/연도별_카테고리별_판매량.html" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/html/연도별_카테고리별_판매량.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/json/2022_분석결과.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/json/2023_분석결과.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/json/2024_분석결과.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/json/전체_분석결과.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/png/2020/2020_지역별_판매량.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/png/2020/2020_지역별_판매량.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/png/2021/2021_지역별_판매량.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/png/2021/2021_지역별_판매량.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/png/2022/2022_지역별_판매량.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/png/2022/2022_지역별_판매량.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/png/2023/2023_지역별_판매량.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/png/2023/2023_지역별_판매량.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/png/2024/2024_지역별_판매량.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/png/2024/2024_지역별_판매량.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/png/연도별_지역별_판매량.png" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/png/연도별_지역별_판매량.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2020/2020_VIP_유저.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2020/2020_VIP_유저.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2020/2020_나이대별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2020/2020_나이대별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2020/2020_성별_매출.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2020/2020_성별_매출.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2020/2020_재무지표.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2020/2020_재무지표.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2020/2020_지역별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2020/2020_지역별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2020/2020_카테고리별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2020/2020_카테고리별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2021/2021_VIP_유저.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2021/2021_VIP_유저.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2021/2021_나이대별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2021/2021_나이대별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2021/2021_성별_매출.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2021/2021_성별_매출.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2021/2021_재무지표.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2021/2021_재무지표.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2021/2021_지역별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2021/2021_지역별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2021/2021_카테고리별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2021/2021_카테고리별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2022/2022_VIP_유저.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2022/2022_VIP_유저.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2022/2022_나이대별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2022/2022_나이대별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2022/2022_성별_매출.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2022/2022_성별_매출.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2022/2022_재무지표.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2022/2022_재무지표.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2022/2022_지역별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2022/2022_지역별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2022/2022_카테고리별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2022/2022_카테고리별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2023/2023_VIP_유저.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2023/2023_VIP_유저.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2023/2023_나이대별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2023/2023_나이대별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2023/2023_성별_매출.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2023/2023_성별_매출.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2023/2023_재무지표.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2023/2023_재무지표.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2023/2023_지역별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2023/2023_지역별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2023/2023_카테고리별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2023/2023_카테고리별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2024/2024_VIP_유저.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2024/2024_VIP_유저.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2024/2024_나이대별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2024/2024_나이대별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2024/2024_성별_매출.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2024/2024_성별_매출.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2024/2024_재무지표.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2024/2024_재무지표.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2024/2024_지역별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2024/2024_지역별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/2024/2024_카테고리별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/2024/2024_카테고리별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/나이대별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/나이대별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/성별별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/성별별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/엑셀데이터종합본.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/엑셀데이터종합본.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/연도별_VIP_유저.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/연도별_VIP_유저.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/연도별_재무지표.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/연도별_재무지표.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/연도별_지역별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/연도별_지역별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/xlsx/연도별_카테고리별_판매량.xlsx" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/xlsx/연도별_카테고리별_판매량.xlsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/routes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/table_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/table_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/test.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/test.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,10 +103,22 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 5
-}]]></component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;maroLee0409&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/durikang/Alpha-style-flask.git&quot;,
+    &quot;accountId&quot;: &quot;dc9ee1ac-7209-467f-9658-2f964e8f7df7&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 5
+}</component>
   <component name="ProjectId" id="2sCX9INutzRmAqzW4Hg93SRwkID" />
   <component name="ProjectLevelVcsManager">
     <ConfirmationsSetting value="2" id="Add" />
@@ -27,21 +127,52 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.app.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.app.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
+  <component name="RunManager">
+    <configuration name="app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="Alpha-style-flask" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/app.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.app" />
+      </list>
+    </recent_temporary>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -59,6 +190,10 @@
       <option name="presentableId" value="Default" />
       <updated>1737960383324</updated>
       <workItem from="1737960385760" duration="1087000" />
+      <workItem from="1738159139927" duration="1594000" />
+      <workItem from="1738201852703" duration="2177000" />
+      <workItem from="1738217452713" duration="994000" />
+      <workItem from="1738319243111" duration="2930000" />
     </task>
     <servers />
   </component>
@@ -66,6 +201,8 @@
     <option name="version" value="3" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Alpha_style_flask$app.coverage" NAME="app Coverage Results" MODIFIED="1737961183559" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/app_py$app.coverage" NAME="app Coverage Results" MODIFIED="1737991864813" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/app_py$test.coverage" NAME="test Coverage Results" MODIFIED="1737990534806" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/app" />
+    <SUITE FILE_PATH="coverage/Alpha_style_flask$app.coverage" NAME="app Coverage Results" MODIFIED="1738320020836" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>

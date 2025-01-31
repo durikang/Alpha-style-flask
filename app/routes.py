@@ -141,7 +141,6 @@ def insert_data():
 
     def generate_progress():
         try:
-            print("[DEBUG] /insert 요청 수신")
 
             # 병합된 파일 경로
             merged_file_path = os.path.join('./merged', 'merged_data.xlsx')
@@ -219,8 +218,6 @@ def create_graph():
 
     def generate_analysis():
         try:
-            print("[DEBUG] /analysis SSE 요청 수신")
-
             # test.py 의 process_all_analysis 를 단계별로 호출/진행률 전송
             # => process_all_analysis()가 한 번에 끝나므로, 중간 단계별로 yield 필요
             # 아래는 예시로 "가짜" 단계별 yield를 삽입.
@@ -252,7 +249,6 @@ def graph_view():
     try:
         # JSON 데이터에서 year 값 가져오기
         data = request.json
-        print(f"[DEBUG] Received data: {data}")
         year = data.get('year')
 
         if not year:
@@ -278,7 +274,6 @@ def graph_view():
                 f'./analysis/html/{year}/{year}_지역별_판매량.html'
             ]
 
-        print(f"[DEBUG] File paths: {file_paths}")
 
         # 각 HTML 파일 내용 읽기
         html_results = []
@@ -289,7 +284,6 @@ def graph_view():
             else:
                 html_results.append({'path': path, 'content': f"File not found: {path}"})
 
-        print(f"[DEBUG] Returning results count: {len(html_results)}")
 
         # Excel 데이터에서 JSON 생성 (summary와 category_sales 데이터)
         table_data = generate_json_from_excel(year if year != "all" else None)
@@ -397,7 +391,6 @@ def download_files():
     try:
         # POST 요청에서 year 값 가져오기
         year = request.form.get('year', 'all')
-        print(f"[DEBUG] 전달된 'year' 값: {year}")
 
         # 고정 파일 경로
         fixed_paths = [
